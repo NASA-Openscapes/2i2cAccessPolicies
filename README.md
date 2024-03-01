@@ -18,15 +18,13 @@ With this setup, we have flexibility to support a diverse range of user needs. T
 
 ## Obtaining Access to the NASA Openscapes Hub
 
-Access is controlled by the NASA Openscapes Team, who oversee the management of the Hub and Cloud costs. The first step to gaining access to the NASA Openscapes 2i2c Hub is to request access via [this form](https://forms.gle/Su2p7BQhwnf9Fufb8). 
+Access is controlled by the NASA Openscapes Team, who oversee the management of the Hub and Cloud costs. The first step to gaining access to the NASA Openscapes 2i2c Hub is to request access via [this form](https://forms.gle/sLM9szAYN2mq6SbL9). 
 
-Our JupyterHub is users are managed in three GitHub Teams: 
+Our JupyterHub users are managed in three GitHub Teams: 
 
-
-
-* [Long-term access](https://github.com/orgs/NASA-Openscapes/teams/longtermaccess-2i2c): This access is for NASA Openscapes mentors and team, DAAC staff and others who request a longer-term engagement  
-* [NASA Openscapes Champions](https://github.com/orgs/NASA-Openscapes/teams/championsaccess-2i2c): This access is for teams that participate in the NASA Openscapes Champions Program. These teams have access for up to a year as they migrate their workflows to the Cloud. 
-* [Workshops and Hack-a-thons](https://github.com/orgs/NASA-Openscapes/teams/workshopaccess-2i2c): This provides short term access of up to 1-month to participants of NASA Earthdata workshops. Participants will be removed at any time and have no expectation of on-going storage in their home directories. 
+* [Long-term access](https://github.com/orgs/nasa-openscapes-workshops/teams/longtermaccess-2i2c): This access is for NASA Openscapes mentors and team, DAAC staff and others who request a longer-term engagement  
+* [NASA Openscapes Champions](https://github.com/orgs/nasa-openscapes-workshops/teams/championsaccess-2i2c): This access is for teams that participate in the NASA Openscapes Champions Program. These teams have access for up to a year as they migrate their workflows to the Cloud. 
+* [Workshops and Hack-a-thons](https://github.com/orgs/nasa-openscapes-workshops/teams/workshopaccess-2i2c): This provides short term access of up to 1-month to participants of NASA Earthdata workshops. Participants will be removed at any time and have no expectation of on-going storage in their home directories. 
 
 
 ## Allowable Uses of 2i2c Hub 
