@@ -36,22 +36,21 @@ Run large or parallel jobs over large geographic bounding boxes or over long tem
 ## Data Storage in the NASA Openscapes Hub
 
 Storing large amounts of data in the cloud can incur significant ongoing costs 
-if not done optimally. Hub instances have persistent storage associated with 
-them in the users's `HOME` directory (`/users/jovyan/` in python images and 
-`/users/rstudio/` in R images).
+if not done optimally. 
 
-The Hub uses an [EC2](https://aws.amazon.com/ec2/) compute instance, with the 
-`HOME` directory mounted to [AWS Elastic File System (EFS)](https://aws.amazon.com/efs/) 
-storage. This drive is really handy because it is persistent across server 
-restarts and is a great place to store your code. However the `HOME` directory 
-should not be used to store data, as it is very expensive, and can also be 
-quite slow to read from and write to. 
+The Hub uses an [EC2](https://aws.amazon.com/ec2/) compute instance, with the
+`$HOME` directory (`/users/jovyan/` in python images and `/users/rstudio/` in R
+images) mounted to [AWS Elastic File System (EFS)](https://aws.amazon.com/efs/)
+storage. This drive is really handy because it is persistent across server
+restarts and is a great place to store your code. However the `$HOME` directory
+should not be used to store data, as it is very expensive, and can also be quite
+slow to read from and write to. 
 
 To that end, the hub provides every user access to two [AWS
 S3](https://aws.amazon.com/s3/) buckets - a "scratch" bucket for short-term
 storage, and a "persistent" bucket for longer-term storage. S3 buckets have fast
 read/write, and storage costs are relatively inexpensive compared to storing in
-your `HOME` directory.
+your `$HOME` directory.
 
 These buckets are accessible only when you are working inside the hub; you can
 access them using the environment variables:
@@ -70,39 +69,44 @@ access them using the environment variables:
 A short tutorial on working with these buckets is available in 
 [the cookbook](https://nasa-openscapes.github.io/earthdata-cloud-cookbook/how-tos/using-s3-storage.html).
 
-### Data retention and archiving
+### Data retention and archiving policy
 
-Home directories will be retained for six months after their last use. After a
-home directory has been idle for six months, it will be 
-[archived to our "archive" S3 bucket, and removed](#how-to-archive-old-home-directories). 
-If a user requests their archive back, an admin can restore it for them.
+User `$HOME` directories will be retained for six months after their last use.
+After a home directory has been idle for six months, it will be [archived to our
+"archive" S3 bucket, and removed](#how-to-archive-old-home-directories). If a
+user requests their archive back, an admin can restore it for them.
 
 Once a user's home directory archive has been sitting in the archive for an 
 additional six months, it will be permanently removed from the archive. After
 this it can no longer be retrieved. <!-- TODO make this automatic policy in S3 console -->
 
 In addition to these policies, admins will keep an eye on the 
-[Home Directory Usage Dashboard](https://grafana.openscapes.2i2c.cloud/d/bd232539-52d0-4435-8a62-fe637dc822be/home-directory-usage-dashboard?orgId=1) in Grafana. When a user's home directory
-increases in size to over 100GB, we will contact them and work with them to 
-reduce the size of their home directory - by removing large unneccesary files, 
-and moving the rest to the appropriate S3 bucket (e.g., `PERSISTENT_BUCKET`). 
+[Home Directory Usage Dashboard](https://grafana.openscapes.2i2c.cloud/d/bd232539-52d0-4435-8a62-fe637dc822be/home-directory-usage-dashboard?orgId=1)
+in Grafana. When a user's home directory increases in size to over 100GB, we
+will contact them and work with them to reduce the size of their home directory
+- by removing large unnecessary files, and moving the rest to the appropriate S3
+bucket (e.g., `$PERSISTENT_BUCKET`). 
 
-### How to archive old home directories
+### How to archive old home directories (admin)
 
 To start, you will need to be an admin of the Openscapes Jupyter hub so that
 the `allusers` directory is mounted in your home directory. This will contain
 all users' home directories, and you will have full read-write access.
 
+#### Finding large `$HOME` directories
+
 Look at the [Home Directory Usage Dashboard](https://grafana.openscapes.2i2c.cloud/d/bd232539-52d0-4435-8a62-fe637dc822be/home-directory-usage-dashboard?orgId=1) in Grafana to see the directories that 
 haven't been used in a long time and/or are very large.
 
-You can also view and sort users directories by size in the hub with the 
+You can also view and sort users' directories by size in the hub with the 
 following command, though this takes a while because it has to summarize _a lot_ 
-of files and directories:
+of files and directories. This will show the 30 largest home directories:
 
 ```
-du -h --max-depth=1 /home/jovyan/allusers/ | sort -h -r
+du -h --max-depth=1 /home/jovyan/allusers/ | sort -h -r | head -n 30
 ```
+
+#### Authenticate with S3 archive bucket
 
 We have created an AWS IAM user called `archive-homedirs` with appropriate 
 permissions to write to the `openscapeshub-prod-homedirs-archive` bucket. 
@@ -137,14 +141,7 @@ awsv2 s3 mv test123.txt s3://openscapeshub-prod-homedirs-archive/archives/
 awsv2 s3 rm s3://openscapeshub-prod-homedirs-archive/archives/test123.txt
 ```
 
-Create a text file, with one username per line, of users' home directories you
-would like to archive to s3. It will look like:
-
-```
-username1
-username2
-# etc...
-```
+#### Setting up and running the archive script
 
 We use a python script, [developed by @yuvipanda](https://github.com/2i2c-org/features/issues/32), 
 that reproducibly archives a list of users' directories into a specified S3 bucket. 
@@ -155,9 +152,18 @@ missing; you can install them before running the script:
 ```
 pip install escapism
 
-# I had solver errors with pigz so needed to use the classic solver. Also, the
-# installation of pigz required a machine with >= 3.7GB memory
+# I had solver errors with pigz so needed to use the classic solver. 
+# Also, the installation of pigz required a machine with >= 3.7GB memory
 conda install conda-forge::pigz --solver classic
+```
+
+Create a text file, with one username per line, of users' home directories you
+would like to archive to s3. It will look like:
+
+```
+username1
+username2
+# etc...
 ```
 
 Finally, run the script from the terminal, changing the parameter values as required:
@@ -177,6 +183,16 @@ which will delete the users' home directory once the archive is completed.
 
 If you don't use the `--delete` flag, first verify that the archive was successfully
 completed and then remove the user's home directory manually.
+
+By default, archives (`.tar.gz`) are created in your `/tmp` directory before
+upload to the S3 bucket. The `/tmp` directory is cleared out when you shut down
+the hub. However, `/tmp` has limited space (80GB shared by up to four users on a
+single node), so if you are archiving many large directories, you will likely
+need to specify a location in your `$HOME` directory by passing a path to the
+`--temp-path` argument. The script will endeavour to clean up after itself and 
+remove the `tar.gz` file after uploading, but double check that directory
+when you are finished or you may have copies of all of the other user
+directories in your own `$HOME`!
 
 ## Removal From the NASA Openscapes Hub
 
