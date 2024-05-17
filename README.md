@@ -33,6 +33,150 @@ Users who join these GitHub teams agree to use the NASA Openscapes Hub only for 
 
 Run large or parallel jobs over large geographic bounding boxes or over long temporal extents should be cleared with the NASA Openscapes Team by submitting an issue to this repo.   
 
+## Data Storage in the NASA Openscapes Hub
+
+Storing large amounts of data in the cloud can incur significant ongoing costs 
+if not done optimally. Hub instances have persistent storage associated with 
+them in the users's `HOME` directory (`/users/jovyan/` in python images and 
+`/users/rstudio/` in R images).
+
+The Hub uses an [EC2](https://aws.amazon.com/ec2/) compute instance, with the 
+`HOME` directory mounted to [AWS Elastic File System (EFS)](https://aws.amazon.com/efs/) 
+storage. This drive is really handy because it is persistent across server 
+restarts and is a great place to store your code. However the `HOME` directory 
+should not be used to store data, as it is very expensive, and can also be 
+quite slow to read from and write to. 
+
+To that end, the hub provides every user access to two [AWS
+S3](https://aws.amazon.com/s3/) buckets - a "scratch" bucket for short-term
+storage, and a "persistent" bucket for longer-term storage. S3 buckets have fast
+read/write, and storage costs are relatively inexpensive compared to storing in
+your `HOME` directory.
+
+These buckets are accessible only when you are working inside the hub; you can
+access them using the environment variables:
+
+- `$SCRATCH_BUCKET` pointing to `s3://openscapeshub-scratch/[your-username]`
+    - Scratch buckets are designed for storage of temporary files, e.g.
+      intermediate results. Objects stored in a scratch bucket are removed after
+      7 days from their creation.
+- `$PERSISTENT_BUCKET` pointing to `s3://openscapeshub-persistent/[your-username]`
+    - Persistent buckets are designed for storing data that is consistently used
+      throughout the lifetime of a project. There is no automatic purging of
+      objects in persistent buckets, so it is the responsibility of the hub
+      admin and/or hub users to delete objects when they are no longer needed to
+      minimize cloud billing costs.
+
+A short tutorial on working with these buckets is available in 
+[the cookbook](https://nasa-openscapes.github.io/earthdata-cloud-cookbook/how-tos/using-s3-storage.html).
+
+### Data retention and archiving
+
+Home directories will be retained for six months after their last use. After a
+home directory has been idle for six months, it will be 
+[archived to our "archive" S3 bucket, and removed](#how-to-archive-old-home-directories). 
+If a user requests their archive back, an admin can restore it for them.
+
+Once a user's home directory archive has been sitting in the archive for an 
+additional six months, it will be permanently removed from the archive. After
+this it can no longer be retrieved. <!-- TODO make this automatic policy in S3 console -->
+
+In addition to these policies, admins will keep an eye on the 
+[Home Directory Usage Dashboard](https://grafana.openscapes.2i2c.cloud/d/bd232539-52d0-4435-8a62-fe637dc822be/home-directory-usage-dashboard?orgId=1) in Grafana. When a user's home directory
+increases in size to over 100GB, we will contact them and work with them to 
+reduce the size of their home directory - by removing large unneccesary files, 
+and moving the rest to the appropriate S3 bucket (e.g., `PERSISTENT_BUCKET`). 
+
+### How to archive old home directories
+
+To start, you will need to be an admin of the Openscapes Jupyter hub so that
+the `allusers` directory is mounted in your home directory. This will contain
+all users' home directories, and you will have full read-write access.
+
+Look at the [Home Directory Usage Dashboard](https://grafana.openscapes.2i2c.cloud/d/bd232539-52d0-4435-8a62-fe637dc822be/home-directory-usage-dashboard?orgId=1) in Grafana to see the directories that 
+haven't been used in a long time and/or are very large.
+
+You can also view and sort users directories by size in the hub with the 
+following command, though this takes a while because it has to summarize _a lot_ 
+of files and directories:
+
+```
+du -h --max-depth=1 /home/jovyan/allusers/ | sort -h -r
+```
+
+We have created an AWS IAM user called `archive-homedirs` with appropriate 
+permissions to write to the `openscapeshub-prod-homedirs-archive` bucket. 
+Get access keys for this user from the AWS console, and use these keys to 
+authenticate in the hub:
+
+In the terminal, type: 
+
+```
+awsv2 configure
+```
+
+Enter the access key and secret key at the prompts, and set default region to 
+`us-west-2`.
+
+You will also need to temporarily unset some AWS environment variables that have 
+been configured to authenticate with NASA S3 storage. (These will be reset the next 
+time you log in):
+
+```
+unset AWS_ROLE_ARN
+unset AWS_WEB_IDENTITY_TOKEN_FILE
+```
+
+Test to make sure you can access the archive bucket:
+
+```
+# test s3 access:
+awsv2 s3 ls s3://openscapeshub-prod-homedirs-archive/archives/
+touch test123.txt
+awsv2 s3 mv test123.txt s3://openscapeshub-prod-homedirs-archive/archives/
+awsv2 s3 rm s3://openscapeshub-prod-homedirs-archive/archives/test123.txt
+```
+
+Create a text file, with one username per line, of users' home directories you
+would like to archive to s3. It will look like:
+
+```
+username1
+username2
+# etc...
+```
+
+We use a python script, [developed by @yuvipanda](https://github.com/2i2c-org/features/issues/32), 
+that reproducibly archives a list of users' directories into a specified S3 bucket. 
+
+In the Hub as of 2024-05-17, a couple of dependencies for the script are
+missing; you can install them before running the script:
+
+```
+pip install escapism
+
+# I had solver errors with pigz so needed to use the classic solver. Also, the
+# installation of pigz required a machine with >= 3.7GB memory
+conda install conda-forge::pigz --solver classic
+```
+
+Finally, run the script from the terminal, changing the parameter values as required:
+
+```
+python3 archive-home-dirs.py \
+    --archive-name="archive-$(date +'%Y-%m-%d')" \
+    --basedir=/home/jovyan/allusers/ \
+    --bucket-name=openscapeshub-prod-homedirs-archive \
+    --object-prefix="archives/" \
+    --usernames-file=users-to-archive.txt \
+    --temp-path=/home/jovyan/archive-staging/
+```
+
+Omitted in the above example, but available to use, is the `--delete` flag, 
+which will delete the users' home directory once the archive is completed.
+
+If you don't use the `--delete` flag, first verify that the archive was successfully
+completed and then remove the user's home directory manually.
 
 ## Removal From the NASA Openscapes Hub
 
