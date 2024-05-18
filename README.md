@@ -143,8 +143,12 @@ awsv2 s3 rm s3://openscapeshub-prod-homedirs-archive/archives/test123.txt
 
 #### Setting up and running the archive script
 
-We use a python script, [developed by @yuvipanda](https://github.com/2i2c-org/features/issues/32), 
-that reproducibly archives a list of users' directories into a specified S3 bucket. 
+We use a [python script](scripts/archive-home-dirs.py), [developed by
+@yuvipanda](https://github.com/2i2c-org/features/issues/32), that reproducibly
+archives a list of users' directories into a specified S3 bucket.
+
+Copy the script into your home directory in the Hub, or even better, clone this
+repo.
 
 In the Hub as of 2024-05-17, a couple of dependencies for the script are
 missing; you can install them before running the script:
