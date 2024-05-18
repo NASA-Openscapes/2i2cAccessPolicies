@@ -2,9 +2,10 @@
 """
 Archive home directories onto object storage (like S3 or GCS).
 Designed to be run manually, and takes care to not delete anything without a lot of
-
 confirmation.
 
+Original script by Yuvi Panda (@yuvipanda), 2i2c. 
+https://github.com/2i2c-org/features/issues/32#issue-2221427520
 """
 
 import hashlib
