@@ -33,6 +33,12 @@ Users who join these GitHub teams agree to use the NASA Openscapes Hub only for 
 
 Run large or parallel jobs over large geographic bounding boxes or over long temporal extents should be cleared with the NASA Openscapes Team by submitting an issue to this repo.   
 
+## Removal From the NASA Openscapes Hub
+
+The NASA Openscapes Hub is a shared, limited resource that incurs real costs. Users are granted access in the terms above and are removed at the end of those limits. Users that haven’t accessed the Hub in more than six months are also removed for security purposes. 
+
+We will do our best to alert users before they lose access to the NASA Openscapes Hub. However, we reserve the right to remove users at any time for any reason. Users that violate the terms of access or incur large Cloud costs without prior permission from the NASA Openscapes Team will be removed immediately.
+
 ## Data Storage in the NASA Openscapes Hub
 
 Storing large amounts of data in the cloud can incur significant ongoing costs if not done optimally. We are charged daily for data stored in our Hub. We are developing technical strategies and policies to reduce storage costs that will keep the Openscapes 2i2c Hub a shared resource for us all to use, while also providing reusable strategies for other admins.
@@ -70,7 +76,9 @@ access them using the environment variables:
 
 ### Using S3 Bucket Storage 
 
-Please see the short tutorial in the Earthdata Cloud Cookbook on [Using S3 Bucket Storage in NASA-Openscapes Hub](https://nasa-openscapes.github.io/earthdata-cloud-cookbook/how-tos/using-s3-storage.html).
+Please see the short tutorial in the Earthdata Cloud Cookbook on [Using S3
+Bucket Storage in NASA-Openscapes
+Hub](https://nasa-openscapes.github.io/earthdata-cloud-cookbook/how-tos/using-s3-storage.html).
 
 ### Data retention and archiving policy
 
@@ -200,9 +208,3 @@ need to specify a location in your `$HOME` directory by passing a path to the
 remove the `tar.gz` file after uploading, but double check that directory
 when you are finished or you may have copies of all of the other user
 directories in your own `$HOME`!
-
-## Removal From the NASA Openscapes Hub
-
-The NASA Openscapes Hub is a shared, limited resource that incurs real costs. Users are granted access in the terms above and are removed at the end of those limits. Users that haven’t accessed the Hub in more than six months are also removed for security purposes. 
-
-We will do our best to alert users before they lose access to the NASA Openscapes Hub. However, we reserve the right to remove users at any time for any reason. Users that violate the terms of access or incur large Cloud costs without prior permission from the NASA Openscapes Team will be removed immediately.
