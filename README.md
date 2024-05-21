@@ -96,7 +96,19 @@ In addition to these policies, admins will keep an eye on the
 in Grafana. When a user's home directory increases in size to over 100GB, we
 will contact them and work with them to reduce the size of their home directory
 - by removing large unnecessary files, and moving the rest to the appropriate S3
-bucket (e.g., `$PERSISTENT_BUCKET`). 
+bucket (e.g., `$PERSISTENT_BUCKET`).
+
+## The `_shared` directory
+
+[The `_shared` directory](https://infrastructure.2i2c.org/topic/infrastructure/storage-layer/#shared-directories) 
+is a place where instructors can put workshop materials
+for participants to access. It is mounted as `/home/jovyan/shared`, and is _read
+only_ for all users. For those with admin access to the Hub, it is also mounted
+as a writeable directory as `/home/jovyan/shared-readwrite`.
+
+This directory will follow the same policies as users' home directories: after 
+six months, contents will be archived to the "archive" S3 bucket (more below). 
+After an additional six months, the archive will be deleted.
 
 ### How to archive old home directories (admin)
 
@@ -106,8 +118,10 @@ all users' home directories, and you will have full read-write access.
 
 #### Finding large `$HOME` directories
 
-Look at the [Home Directory Usage Dashboard](https://grafana.openscapes.2i2c.cloud/d/bd232539-52d0-4435-8a62-fe637dc822be/home-directory-usage-dashboard?orgId=1) in Grafana to see the directories that 
-haven't been used in a long time and/or are very large.
+Look at the [Home Directory Usage
+Dashboard](https://grafana.openscapes.2i2c.cloud/d/bd232539-52d0-4435-8a62-fe637dc822be/home-directory-usage-dashboard?orgId=1)
+in Grafana to see the directories that haven't been used in a long time and/or
+are very large.
 
 You can also view and sort users' directories by size in the Hub with the 
 following command, though this takes a while because it has to summarize _a lot_ 
