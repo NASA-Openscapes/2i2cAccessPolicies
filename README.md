@@ -35,7 +35,7 @@ Run large or parallel jobs over large geographic bounding boxes or over long tem
 
 ## Data Storage in the NASA Openscapes Hub
 
-Storing large amounts of data in the cloud can incur significant ongoing costs 
+Storing large amounts of data in the cloud can incur significant ongoing costs if not done optimally. We are charged daily for data stored in our Hub. We are developing technical strategies and policies to reduce storage costs that will keep the Openscapes 2i2c Hub a shared resource for us all to use, while also providing reusable strategies for other admins.
 if not done optimally. 
 
 The Hub uses an [EC2](https://aws.amazon.com/ec2/) compute instance, with the
@@ -46,11 +46,11 @@ restarts and is a great place to store your code. However the `$HOME` directory
 should not be used to store data, as it is very expensive, and can also be quite
 slow to read from and write to. 
 
-To that end, the hub provides every user access to two [AWS
+To that end, the Hub provides every user access to two [AWS
 S3](https://aws.amazon.com/s3/) buckets - a "scratch" bucket for short-term
 storage, and a "persistent" bucket for longer-term storage. S3 buckets have fast
 read/write, and storage costs are relatively inexpensive compared to storing in
-your `$HOME` directory.
+your `$HOME` directory. A "bucket" is an AWS word for storage folder.
 
 These buckets are accessible only when you are working inside the hub; you can
 access them using the environment variables:
@@ -66,8 +66,9 @@ access them using the environment variables:
       admin and/or hub users to delete objects when they are no longer needed to
       minimize cloud billing costs.
 
-A short tutorial on working with these buckets is available in 
-[the cookbook](https://nasa-openscapes.github.io/earthdata-cloud-cookbook/how-tos/using-s3-storage.html).
+### Using S3 Bucket Storage 
+
+Please see the short tutorial in the Earthdata Cloud Cookbook on [Using S3 Bucket Storage in NASA-Openscapes Hub](https://nasa-openscapes.github.io/earthdata-cloud-cookbook/how-tos/using-s3-storage.html).
 
 ### Data retention and archiving policy
 
