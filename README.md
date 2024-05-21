@@ -36,7 +36,6 @@ Run large or parallel jobs over large geographic bounding boxes or over long tem
 ## Data Storage in the NASA Openscapes Hub
 
 Storing large amounts of data in the cloud can incur significant ongoing costs if not done optimally. We are charged daily for data stored in our Hub. We are developing technical strategies and policies to reduce storage costs that will keep the Openscapes 2i2c Hub a shared resource for us all to use, while also providing reusable strategies for other admins.
-if not done optimally. 
 
 The Hub uses an [EC2](https://aws.amazon.com/ec2/) compute instance, with the
 `$HOME` directory (`/users/jovyan/` in python images and `/users/rstudio/` in R
