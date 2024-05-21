@@ -128,7 +128,7 @@ following command, though this takes a while because it has to summarize _a lot_
 of files and directories. This will show the 30 largest home directories:
 
 ```
-du -h --max-depth=1 /home/jovyan/allusers/ | sort -h -r | head -n 30
+du -h --max-depth=1 /home/jovyan/allusers/ | sort -hr | head -n 30
 ```
 
 #### Authenticate with S3 archive bucket
