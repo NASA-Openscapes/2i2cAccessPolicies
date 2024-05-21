@@ -52,7 +52,7 @@ storage, and a "persistent" bucket for longer-term storage. S3 buckets have fast
 read/write, and storage costs are relatively inexpensive compared to storing in
 your `$HOME` directory. A "bucket" is an AWS word for storage folder.
 
-These buckets are accessible only when you are working inside the hub; you can
+These buckets are accessible only when you are working inside the Hub; you can
 access them using the environment variables:
 
 - `$SCRATCH_BUCKET` pointing to `s3://openscapeshub-scratch/[your-username]`
@@ -62,8 +62,8 @@ access them using the environment variables:
 - `$PERSISTENT_BUCKET` pointing to `s3://openscapeshub-persistent/[your-username]`
     - Persistent buckets are designed for storing data that is consistently used
       throughout the lifetime of a project. There is no automatic purging of
-      objects in persistent buckets, so it is the responsibility of the hub
-      admin and/or hub users to delete objects when they are no longer needed to
+      objects in persistent buckets, so it is the responsibility of the Hub
+      admin and/or Hub users to delete objects when they are no longer needed to
       minimize cloud billing costs.
 
 ### Using S3 Bucket Storage 
@@ -90,7 +90,7 @@ bucket (e.g., `$PERSISTENT_BUCKET`).
 
 ### How to archive old home directories (admin)
 
-To start, you will need to be an admin of the Openscapes Jupyter hub so that
+To start, you will need to be an admin of the Openscapes Jupyterhub so that
 the `allusers` directory is mounted in your home directory. This will contain
 all users' home directories, and you will have full read-write access.
 
@@ -99,7 +99,7 @@ all users' home directories, and you will have full read-write access.
 Look at the [Home Directory Usage Dashboard](https://grafana.openscapes.2i2c.cloud/d/bd232539-52d0-4435-8a62-fe637dc822be/home-directory-usage-dashboard?orgId=1) in Grafana to see the directories that 
 haven't been used in a long time and/or are very large.
 
-You can also view and sort users' directories by size in the hub with the 
+You can also view and sort users' directories by size in the Hub with the 
 following command, though this takes a while because it has to summarize _a lot_ 
 of files and directories. This will show the 30 largest home directories:
 
@@ -112,7 +112,7 @@ du -h --max-depth=1 /home/jovyan/allusers/ | sort -h -r | head -n 30
 We have created an AWS IAM user called `archive-homedirs` with appropriate 
 permissions to write to the `openscapeshub-prod-homedirs-archive` bucket. 
 Get access keys for this user from the AWS console, and use these keys to 
-authenticate in the hub:
+authenticate in the Hub:
 
 In the terminal, type: 
 
@@ -191,7 +191,7 @@ completed and then remove the user's home directory manually.
 
 By default, archives (`.tar.gz`) are created in your `/tmp` directory before
 upload to the S3 bucket. The `/tmp` directory is cleared out when you shut down
-the hub. However, `/tmp` has limited space (80GB shared by up to four users on a
+the Hub. However, `/tmp` has limited space (80GB shared by up to four users on a
 single node), so if you are archiving many large directories, you will likely
 need to specify a location in your `$HOME` directory by passing a path to the
 `--temp-path` argument. The script will endeavour to clean up after itself and 
