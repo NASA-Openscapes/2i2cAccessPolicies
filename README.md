@@ -183,7 +183,7 @@ pip install escapism
 
 # I had solver errors with pigz so needed to use the classic solver. 
 # Also, the installation of pigz required a machine with >= 3.7GB memory
-conda install conda-forge::pigz --solver classic
+conda install pigz --solver classic
 ```
 
 Create a text file, with one username per line, of users' home directories you
@@ -213,6 +213,30 @@ which will delete the users' home directory once the archive is completed.
 If you don't use the `--delete` flag, first verify that the archive was successfully
 completed and then remove the user's home directory manually.
 
+##### Archiving the shared directory
+
+You can use the same script to archive directories in the `shared` directory, by modifying 
+the inputs slightly:
+
+- Set `--basedir=/home/jovyan/shared/`, (or `--basedir=/home/jovyan/shared-readwrite/`
+  if you want to be able use the `--delete` flag).
+- Create a file with a list of directories in the `shared` directory you want to archive,
+  and pass it to the `--usernames-file` argument.
+- Set `--object-prefix="archives/_shared/` to put the archives in the `_shared` subdirectory
+  in the archive bucket.
+
+E.g.:
+
+```
+python3 archive-home-dirs.py \
+    --archive-name="archive-$(date +'%Y-%m-%d')" \
+    --basedir=/home/jovyan/shared/ \
+    --bucket-name=openscapeshub-prod-homedirs-archive \
+    --object-prefix="archives/_shared/" \
+    --usernames-file=/home/jovyan/shared-to-archive.txt \
+    --temp-path=/home/jovyan/archive-staging/
+```
+
 By default, archives (`.tar.gz`) are created in your `/tmp` directory before
 upload to the S3 bucket. The `/tmp` directory is cleared out when you shut down
 the Hub. However, `/tmp` has limited space (80GB shared by up to four users on a
@@ -222,3 +246,4 @@ need to specify a location in your `$HOME` directory by passing a path to the
 remove the `tar.gz` file after uploading, but double check that directory
 when you are finished or you may have copies of all of the other user
 directories in your own `$HOME`!
+

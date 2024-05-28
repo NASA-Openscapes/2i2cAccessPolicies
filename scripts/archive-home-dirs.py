@@ -152,9 +152,10 @@ def archive_user(
         username, safe=set(string.ascii_lowercase + string.digits), escape_char="-"
     ).lower()
 
-    homedir = basedir / escaped_username
+    homedir = basedir / username
+    escaped_homedir = basedir / escaped_username
 
-    if ignore_missing and not homedir.exists():
+    if ignore_missing and not escaped_homedir.exists():
         print(f"User {username} does not exist, skipping archival")
         return
 
@@ -199,7 +200,7 @@ def archive_user(
             if delete:
                 start_time = time.perf_counter()
                 print(f"Already uploaded, going to delete {username}")
-                shutil.rmtree(homedir)
+                shutil.rmtree(escaped_homedir)
                 duration = time.perf_counter() - start_time
                 print(f"Already uploaded, deleted {username} in {duration:0.2f}s")
             else:
