@@ -74,7 +74,7 @@ query_prometheus_range <- function(
 }
 
 
-query_prometheus_static <- function(
+query_prometheus_instant <- function(
     grafana_url = "https://grafana.openscapes.2i2c.cloud",
     grafana_token = Sys.getenv("GRAFANA_TOKEN"),
     prometheus_uid = get_default_prometheus_uid(grafana_url, grafana_token),
@@ -121,7 +121,7 @@ library(kyber)
 library(ggplot2)
 library(forcats)
 
-current_size <- query_prometheus_static(
+current_size <- query_prometheus_instant(
   query = "max(dirsize_total_size_bytes) by (directory)"
 )
 
@@ -218,8 +218,10 @@ ce_to_df <- function(ce_result) {
     vapply(ce_result$GroupDefinitions, `[[`, "Key", FUN.VALUE = character(1))
   )
 
+  res_by_time <- Filter(\(y) length(y$Groups) > 0, ce_result$ResultsByTime)
+
   df_list <- lapply(
-    ce_result$ResultsByTime,
+    res_by_time,
     results_by_time_to_df,
     keynames = dimension_names
   )
@@ -247,7 +249,9 @@ results_by_time_to_df <- function(x, keynames) {
     FUN.VALUE = numeric(1)
   )
 
-  cbind(date, keys, amount_usd)
+  estimated <- x$Estimated
+
+  cbind(date, keys, amount_usd, estimated)
 }
 
 usage_costs <- ce_to_df(res)
