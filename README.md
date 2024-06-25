@@ -21,5 +21,5 @@ We’re using [Discussions](https://github.com/NASA-Openscapes/2i2cAccessPolicie
 - Engage with other community members.
 - Welcome others and are open-minded. Remember that this is a community we build together 💪.
 
-The thread [What's happening on the NASA Openscapes Hub!?](https://github.com/NASA-Openscapes/2i2cAccessPolicies/discussions/2) is a great place to share the 
+[**What's happening on the NASA Openscapes Hub!?**](https://github.com/NASA-Openscapes/2i2cAccessPolicies/discussions/2) is a thread to  share stories big and small about your experiences using the Hub for science and teaching. These stories are important to communicate the value of hosting cloud resources so that we can continue to do so, so we appreciate you sharing your experiences. Thank you!
 great things you are using the hub for.
