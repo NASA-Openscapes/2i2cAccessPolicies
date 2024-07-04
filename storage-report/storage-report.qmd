@@ -1,30 +1,31 @@
----
-title: "NASA Openscapes Jupyter Hub Usage and Costs"
-subtitle: "Monthly report for `r format(Sys.Date(), '%B %Y')`"
-date: "`r Sys.Date()`"
-format: pdf
-params:
-  year_month: "2024-06"
----
-
-### Introduction
-
-A key objective of NASA Openscapes is to minimize “the time to science” for researchers. Cloud infrastructure can facilitate shortening this time. We use a 2i2c-managed JupyterHub, which lets us work in the cloud next to NASA Earthdata in AWS US-West-2. The purpose of the JupyterHub is to provide initial, exploratory experiences accessing NASA Earthdata in the cloud. It is not meant to be a long-term solution to support on-going science work or software development. For those users that decide working in the Cloud is advantageous and want to move there, we support a migration from the Hub to their own environment through Coiled.io, and are working on other "fledging" pathways.
-
-The main costs of running the JupyterHub come from two sources:
-
-1. Compute, using AWS EC2
-2. Storage using AWS EFS, via storage in users' home directories
-
-Compute costs scale up and down as the Hub is used, however storage costs are 
-fixed - we pay for "data at rest", with ongoing daily costs/GB even while the Hub is
-not running.
-
-Storing large amounts of data in the cloud can incur significant ongoing costs if not done optimally. We are developing [technical strategies and policies](https://nasa-openscapes.github.io/earthdata-cloud-cookbook/policies-admin/data-policies.html) to reduce storage costs that will keep the Openscapes 2i2c Hub a shared resource for us all to use, while also providing reusable strategies for other admins.
-
-
-```{r setup}
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
 #| include: false
+
 library(dplyr)
 library(kyber)
 library(ggplot2)
@@ -33,35 +34,104 @@ library(lubridate)
 library(paws)
 library(here)
 
+knitr::opts_chunk$set(
+  echo = FALSE,
+  message = FALSE,
+  warning = FALSE
+)
+
 source(here("storage-report/R/prometheus-utils.R"))
 source(here("storage-report/R/aws-ce-utils.R"))
+
+if (interactive()) {
+  params <- list(year_month = format(Sys.Date() - months(1), "%Y-%m"))
+}
 
 start_date <- ym(params$year_month)
 end_date <- ceiling_date(start_date, unit = "month") - days(1)
 
 cost_explorer <- paws::costexplorer()
-```
 
-## Total Costs
-
-```{r}
+theme_set(theme_classic())
+#
+#
+#
+#
+#
 
 # https://www.paws-r-sdk.com/docs/costexplorer_get_cost_and_usage/
 # https://docs.aws.amazon.com/aws-cost-management/latest/APIReference/API_GetDimensionValues.html
-res <- cost_explorer$get_cost_and_usage(
-  TimePeriod = list(Start = end_date - months(6) + days(1), End = end_date),
+total_monthly_usage_costs <- cost_explorer$get_cost_and_usage(
+  TimePeriod = list(Start = ceiling_date(end_date - months(6), unit = "month"), End = end_date),
   Granularity = "MONTHLY",
   Filter = list(Dimensions = list(
     Key = "RECORD_TYPE",
     Values = "Usage"
   )),
   Metrics = "UnblendedCost"
-)
+) |>
+  ce_to_df()
 
-totaly_monthly_usage_costs <- ce_to_df(res)
-```
+ggplot(total_monthly_usage_costs) +
+  geom_line(aes(x = start_date, y = amount_usd)) +
+  labs(
+    title = "Monthly total cost of all AWS Services for running the NASA Openscapes 2i2c Hub",
+    x = "Month",
+    y = "Monthly cost ($)"
+  )
+#
+#
+#
 
-```{r}
+monthly_costs_by_service <- cost_explorer$get_cost_and_usage(
+  TimePeriod = list(Start = ceiling_date(end_date - months(6), unit = "month"), End = end_date),
+  Granularity = "MONTHLY",
+  Filter = list(Dimensions = list(
+    Key = "RECORD_TYPE",
+    Values = "Usage"
+  )),
+  Metrics = "UnblendedCost",
+  GroupBy = list(
+    list(
+      Type = "DIMENSION",
+      Key = "SERVICE"
+    )
+  )
+) |>
+  ce_to_df()
+
+monthly_costs_by_service |>
+  group_by(start_date, end_date) |>
+  mutate(service = case_when(
+    amount_usd < 1 ~ "Other",
+    .default = service
+  )) |>
+  group_by(start_date, end_date, service) |>
+  summarise(
+    amount_usd = sum(amount_usd, na.rm = TRUE),
+    .groups = "drop"
+  ) |>
+  mutate(
+    service = fct_reorder(service, desc(amount_usd), .fun = mean, .desc = TRUE)
+  ) |>
+  ggplot(aes(x = start_date, y = amount_usd, fill = service)) +
+  geom_col() +
+  paletteer::scale_fill_paletteer_d("ggpomological::pomological_palette", direction = -1) +
+  guides(fill = guide_legend(nrow = 3)) +
+  theme(legend.position = "bottom", legend.title.position = "top") +
+  labs(
+    title = "Monthly cost of AWS Services",
+    caption = "*Services costing less than $1/month are grouped into 'Other'",
+    x = "Month",
+    y = "Monthly cost ($)",
+    fill = "AWS Service"
+  )
+
+#
+#
+#
+#
+#
 monthly_size <- query_prometheus_range(
   query = "max(dirsize_total_size_bytes{namespace='prod'})",
   start_time = end_date - months(6),
@@ -69,13 +139,17 @@ monthly_size <- query_prometheus_range(
   step = 60 * 60 * 24 * 30
 ) |>
   create_range_df(value_name = "size")
-```
 
-```{r}
-#| echo: false
-#| message: false
-#| warning: false
-
+ggplot(monthly_size) +
+  geom_col(aes(x = date, y = size)) +
+  labs(
+    title = "Total size of user home directories in AWS EFS",
+    x = "Month",
+    y = "Total Size (GB)"
+  )
+#
+#
+#
 size_by_date <- query_prometheus_range(
   query = "max(dirsize_total_size_bytes) by (directory, namespace)",
   start_time = start_date,
@@ -131,39 +205,43 @@ size_by_date <- size_by_date |>
 all_dirs_sum_by_date <- size_by_date |>
   filter(namespace %in% c("prod", "workshop")) |>
   group_by(namespace, date, team) |>
-  summarize(total_size_gb = sum(size))
+  summarize(total_size_gb = sum(size)) |>
+  mutate(
+    team = fct_reorder(team, desc(total_size_gb), .fun = max, .desc = TRUE)
+  )
 
 all_dirs_sum_by_date |>
   ggplot(aes(x = date, y = total_size_gb)) +
   geom_area(aes(fill = team)) +
   facet_grid(vars(namespace), scales = "free_y") +
   theme(legend.position = "bottom", legend.title.position = "top") +
-  labs(x = "Date", y = "Size (GiB)") +
-  theme_classic()
+  labs(x = "Date", y = "Size (GiB)")
 
 size_by_date |>
   filter(team == "NASA Champions 2024") |>
   ggplot(aes(x = date, y = size, fill = directory)) +
   geom_area() +
   paletteer::scale_fill_paletteer_d("khroma::soil", guide = "none") +
-  labs(x = "Date", y = "Size (GiB)") +
-  theme_classic()
+  labs(x = "Date", y = "Size (GiB)")
 
-```
-
-```{r}
-
-cost_explorer <- paws::costexplorer()
-
+#
+#
+#
 # https://www.paws-r-sdk.com/docs/costexplorer_get_cost_and_usage/
 # https://docs.aws.amazon.com/aws-cost-management/latest/APIReference/API_GetDimensionValues.html
-res <- cost_explorer$get_cost_and_usage(
+ec2_instance_type_costs <- cost_explorer$get_cost_and_usage(
   TimePeriod = list(Start = start_date, End = end_date),
   Granularity = "DAILY",
-  Filter = list(Dimensions = list(
-    Key = "RECORD_TYPE",
-    Values = "Usage"
-  )),
+  Filter = list(
+    Dimensions = list(
+      Key = "RECORD_TYPE",
+      Values = "Usage"
+    ),
+    Dimensions = list(
+      Key = "SERVICE",
+      Values = "Amazon Elastic Compute Cloud - Compute"
+    )
+  ),
   Metrics = "UnblendedCost",
   GroupBy = list(
     list(
@@ -175,37 +253,26 @@ res <- cost_explorer$get_cost_and_usage(
       Key = "INSTANCE_TYPE"
     )
   )
-)
-
-usage_costs <- ce_to_df(res)
-```
-
-```{r}
-library(dplyr)
-library(ggplot2)
-library(forcats)
-
-# Only include services where total cost for the time period > $1
-services_to_ignore <- usage_costs |>
-  group_by(service) |>
-  summarise(total_cost = sum(amount_usd)) |>
-  filter(total_cost < 1)
-
-cost_by_service <- usage_costs |>
-  anti_join(services_to_ignore, by = "service") |>
-  group_by(end_date, service) |>
-  summarize(
-    cost = sum(amount_usd),
-    .groups = "drop"
-  ) |>
-  arrange(end_date) |>
-  mutate(
-    cum_cost = cumsum(cost),
-    .by = "service"
-  ) |>
-  mutate(
-    service = fct_reorder(service, desc(cost), .fun = sum)
+) |>
+  ce_to_df() |>
+  filter(
+    instance_type != "NoInstanceType"
   )
+
+ec2_instance_type_costs |>
+  mutate(instance_type = fct_reorder(instance_type, desc(amount_usd), .fun = max, .desc = TRUE)) |>
+  ggplot(aes(x = start_date, y = amount_usd, fill = instance_type)) +
+  geom_col() +
+  paletteer::scale_fill_paletteer_d("ggpomological::pomological_palette", direction = -1) +
+  labs(
+    title = "Daily EC2 cost by instance type",
+    x = "Date",
+    y = "Daily Cost ($)",
+    fill = "EC2 Instance Type"
+  )
+#
+#
+#
 
 ggplot(
   cost_by_service,
@@ -216,9 +283,8 @@ ggplot(
 ) +
   geom_col() +
   paletteer::scale_fill_paletteer_d("ggpomological::pomological_palette", direction = -1) +
-  guides(fill = guide_legend(nrow = 3)) +
-  theme_classic() +
-  theme(legend.position = "bottom", legend.title.position = "top") +
+  guides(fill = guide_legend(nrow = 3))
+theme(legend.position = "bottom", legend.title.position = "top") +
   labs(
     x = "Date",
     y = "Daily cost ($)",
@@ -229,9 +295,11 @@ ggplot(cost_by_service, aes(x = end_date, y = cost, colour = service)) +
   geom_line() +
   facet_wrap(vars(service), scales = "free_y", ncol = 2) +
   paletteer::scale_colour_paletteer_d("ggpomological::pomological_palette", direction = 1, guide = "none") +
-  theme_classic() +
   labs(
     x = "Date",
     y = "Daily cost ($)"
   )
-```
+#
+#
+#
+#
