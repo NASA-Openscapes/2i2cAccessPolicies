@@ -1,29 +1,29 @@
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
+---
+title: "NASA Openscapes Jupyter Hub Usage and Costs"
+subtitle: "Monthly report for `r format(Sys.Date(), '%B %Y')`"
+date: "`r Sys.Date()`"
+format: pdf
+params:
+  year_month: "2024-06"
+---
+
+### Introduction
+
+A key objective of NASA Openscapes is to minimize “the time to science” for researchers. Cloud infrastructure can facilitate shortening this time. We use a 2i2c-managed JupyterHub, which lets us work in the cloud next to NASA Earthdata in AWS US-West-2. The purpose of the JupyterHub is to provide initial, exploratory experiences accessing NASA Earthdata in the cloud. It is not meant to be a long-term solution to support on-going science work or software development. For those users that decide working in the Cloud is advantageous and want to move there, we support a migration from the Hub to their own environment through Coiled.io, and are working on other "fledging" pathways.
+
+The main costs of running the JupyterHub come from two sources:
+
+1. Compute, using AWS EC2
+2. Storage using AWS EFS, via storage in users' home directories
+
+Compute costs scale up and down as the Hub is used, however storage costs are 
+fixed - we pay for "data at rest", with ongoing daily costs/GB even while the Hub is
+not running.
+
+Storing large amounts of data in the cloud can incur significant ongoing costs if not done optimally. We are developing [technical strategies and policies](https://nasa-openscapes.github.io/earthdata-cloud-cookbook/policies-admin/data-policies.html) to reduce storage costs that will keep the Openscapes 2i2c Hub a shared resource for us all to use, while also providing reusable strategies for other admins.
+
+
+```{r setup}
 #| include: false
 
 library(dplyr)
@@ -53,11 +53,11 @@ end_date <- ceiling_date(start_date, unit = "month") - days(1)
 cost_explorer <- paws::costexplorer()
 
 theme_set(theme_classic())
-#
-#
-#
-#
-#
+```
+
+## Total Costs
+
+```{r total-costs}
 
 # https://www.paws-r-sdk.com/docs/costexplorer_get_cost_and_usage/
 # https://docs.aws.amazon.com/aws-cost-management/latest/APIReference/API_GetDimensionValues.html
@@ -79,9 +79,9 @@ ggplot(total_monthly_usage_costs) +
     x = "Month",
     y = "Monthly cost ($)"
   )
-#
-#
-#
+```
+
+```{r monthly-costs-by-service}
 
 monthly_costs_by_service <- cost_explorer$get_cost_and_usage(
   TimePeriod = list(Start = ceiling_date(end_date - months(6), unit = "month"), End = end_date),
@@ -127,11 +127,11 @@ monthly_costs_by_service |>
     fill = "AWS Service"
   )
 
-#
-#
-#
-#
-#
+```
+
+## Size of user home directories
+
+```{r}
 monthly_size <- query_prometheus_range(
   query = "max(dirsize_total_size_bytes{namespace='prod'})",
   start_time = end_date - months(6),
@@ -147,9 +147,9 @@ ggplot(monthly_size) +
     x = "Month",
     y = "Total Size (GB)"
   )
-#
-#
-#
+```
+
+```{r}
 size_by_date <- query_prometheus_range(
   query = "max(dirsize_total_size_bytes) by (directory, namespace)",
   start_time = start_date,
@@ -224,9 +224,9 @@ size_by_date |>
   paletteer::scale_fill_paletteer_d("khroma::soil", guide = "none") +
   labs(x = "Date", y = "Size (GiB)")
 
-#
-#
-#
+```
+
+```{r}
 # https://www.paws-r-sdk.com/docs/costexplorer_get_cost_and_usage/
 # https://docs.aws.amazon.com/aws-cost-management/latest/APIReference/API_GetDimensionValues.html
 ec2_instance_type_costs <- cost_explorer$get_cost_and_usage(
@@ -270,9 +270,9 @@ ec2_instance_type_costs |>
     y = "Daily Cost ($)",
     fill = "EC2 Instance Type"
   )
-#
-#
-#
+```
+
+```{r}
 
 ggplot(
   cost_by_service,
@@ -299,7 +299,4 @@ ggplot(cost_by_service, aes(x = end_date, y = cost, colour = service)) +
     x = "Date",
     y = "Daily cost ($)"
   )
-#
-#
-#
-#
+```
