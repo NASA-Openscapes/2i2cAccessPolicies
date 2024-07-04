@@ -1,10 +1,9 @@
 ---
 title: "NASA Openscapes Jupyter Hub Usage and Costs"
-subtitle: "Monthly report for `r format(Sys.Date(), '%B %Y')`"
-date: "`r Sys.Date()`"
-format: pdf
 params:
-  year_month: "2024-06"
+  year_month: "2024-05"
+subtitle: "Monthly report for `r format(lubridate::ym(params$year_month), '%B %Y')`"
+format: pdf
 ---
 
 ### Introduction
@@ -22,6 +21,9 @@ not running.
 
 Storing large amounts of data in the cloud can incur significant ongoing costs if not done optimally. We are developing [technical strategies and policies](https://nasa-openscapes.github.io/earthdata-cloud-cookbook/policies-admin/data-policies.html) to reduce storage costs that will keep the Openscapes 2i2c Hub a shared resource for us all to use, while also providing reusable strategies for other admins.
 
+This report is intended to give a monthly summary of usage of the hub and its 
+resources, by tracking metrics on costs and usage of key components of storage (EFS)
+and compute (EC2).
 
 ```{r setup}
 #| include: false
@@ -40,11 +42,11 @@ knitr::opts_chunk$set(
   warning = FALSE
 )
 
-source(here("storage-report/R/prometheus-utils.R"))
-source(here("storage-report/R/aws-ce-utils.R"))
+source(here("aws-usage-report/R/prometheus-utils.R"))
+source(here("aws-usage-report/R/aws-ce-utils.R"))
 
 if (interactive()) {
-  params <- list(year_month = format(Sys.Date() - months(1), "%Y-%m"))
+  params <- list(year_month = format(Sys.Date() %m-% months(1), "%Y-%m"))
 }
 
 start_date <- ym(params$year_month)
@@ -64,7 +66,7 @@ theme_set(theme_classic())
 # https://www.paws-r-sdk.com/docs/costexplorer_get_cost_and_usage/
 # https://docs.aws.amazon.com/aws-cost-management/latest/APIReference/API_GetDimensionValues.html
 total_monthly_usage_costs <- cost_explorer$get_cost_and_usage(
-  TimePeriod = list(Start = ceiling_date(end_date - months(6), unit = "month"), End = end_date),
+  TimePeriod = list(Start = ceiling_date(end_date %m-% months(6), unit = "month"), End = end_date),
   Granularity = "MONTHLY",
   Filter = list(Dimensions = list(
     Key = "RECORD_TYPE",
@@ -87,7 +89,7 @@ ggplot(total_monthly_usage_costs) +
 #| fig-height: 8
 
 monthly_costs_by_service <- cost_explorer$get_cost_and_usage(
-  TimePeriod = list(Start = ceiling_date(end_date - months(6), unit = "month"), End = end_date),
+  TimePeriod = list(Start = ceiling_date(end_date %m-% months(6), unit = "month"), End = end_date),
   Granularity = "MONTHLY",
   Filter = list(Dimensions = list(
     Key = "RECORD_TYPE",
@@ -137,7 +139,7 @@ monthly_costs_by_service |>
 ```{r}
 monthly_size <- query_prometheus_range(
   query = "max(dirsize_total_size_bytes{namespace='prod'})",
-  start_time = end_date - months(6),
+  start_time = end_date %m-% months(6),
   end_time = end_date,
   step = 60 * 60 * 24 * 30
 ) |>
