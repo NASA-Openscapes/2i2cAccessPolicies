@@ -1,195 +1,159 @@
 ---
-title: "NASA Openscapes Jupyter Hub Storage Usage and Costs"
-format: html
+title: "NASA Openscapes Jupyter Hub Usage and Costs"
+subtitle: "Monthly report for `r format(Sys.Date(), '%B %Y')`"
+date: "`r Sys.Date()`"
+format: pdf
+params:
+  year_month: "2024-06"
 ---
 
-```{r}
-#| echo: false
-get_default_prometheus_uid <- function(grafana_url = "https://grafana.openscapes.2i2c.cloud",
-                                       grafana_token = Sys.getenv("GRAFANA_TOKEN")) {
-  api_url <- glue::glue("{grafana_url}/")
+### Introduction
 
-  res <- httr2::request(grafana_url) |>
-    httr2::req_url_path("/api/datasources/") |>
-    httr2::req_auth_bearer_token(grafana_token) |>
-    httr2::req_perform()
+A key objective of NASA Openscapes is to minimize “the time to science” for researchers. Cloud infrastructure can facilitate shortening this time. We use a 2i2c-managed JupyterHub, which lets us work in the cloud next to NASA Earthdata in AWS US-West-2. The purpose of the JupyterHub is to provide initial, exploratory experiences accessing NASA Earthdata in the cloud. It is not meant to be a long-term solution to support on-going science work or software development. For those users that decide working in the Cloud is advantageous and want to move there, we support a migration from the Hub to their own environment through Coiled.io, and are working on other "fledging" pathways.
 
-  body <- httr2::resp_body_json(res)
+The main costs of running the JupyterHub come from two sources:
 
-  Filter(\(x) x$name == "prometheus", body)[[1]][["uid"]] # should also check if isDefault, but there is only one and it is isDefault = FALSE
-}
+1. Compute, using AWS EC2
+2. Storage using AWS EFS, via storage in users' home directories
 
-#  get_homedir_dashboard <- function(
-#     grafana_url = "https://grafana.openscapes.2i2c.cloud",
-#     grafana_token = Sys.getenv("GRAFANA_TOKEN")
-#   ) {
-#     ret <- httr2::request(grafana_url) |>
-#       httr2::req_url_path("/api/dashboards/uid", "bd232539-52d0-4435-8a62-fe637dc822be") |>
-#       httr2::req_auth_bearer_token(grafana_token) |>
-#       httr2::req_perform() |>
-#       httr2::resp_check_status() |>
-#       httr2::resp_body_json()
+Compute costs scale up and down as the Hub is used, however storage costs are 
+fixed - we pay for "data at rest", with ongoing daily costs/GB even while the Hub is
+not running.
 
-#     ret
-#   }
-
-query_prometheus_range <- function(
-    grafana_url = "https://grafana.openscapes.2i2c.cloud",
-    grafana_token = Sys.getenv("GRAFANA_TOKEN"),
-    prometheus_uid = get_default_prometheus_uid(grafana_url, grafana_token),
-    query,
-    start_time,
-    end_time,
-    step) {
-  # Query data from prometheus & return responses
-  #
-  # Args:
-  #     grafana_url (str): URL of Grafana to use to query. Must end in a trailing slash
-  #     grafana_token (str): Token of grafana service account with Viewer permissions to use
-  #     prometheus_uid (str): uid of prometheus datasource within grafana to query
-  #     query (str): Prometheus query to execute
-  #     start_time (datetime): Start time to run this query from
-  #     end_time (datetime): End time to run this query till
-  #     step (int): Steps (in seconds) to execute this query, starting from start_time until end_time
-  #
-  # Returns:
-  #     Query responses, in the [range vector format](https://prometheus.io/docs/prometheus/latest/querying/api/#range-vectors)
-  #     [
-  #         {"metric": {<metric-info>}, "values": [[timestamp, value], [timestamp, value]...]},
-  #         {"metric": {<metric-info>}, "values": [[timestamp, value], [timestamp, value]...]}
-  #     ]
-
-  httr2::request(grafana_url) |>
-    httr2::req_url_path("/api/datasources/proxy/uid", prometheus_uid, "api/v1/query_range") |>
-    httr2::req_auth_bearer_token(grafana_token) |>
-    httr2::req_url_query(
-      query = query,
-      start = format(as.POSIXct(start_time), "%Y-%m-%dT%H:%M:%SZ"),
-      end = format(as.POSIXct(end_time), "%Y-%m-%dT%H:%M:%SZ"),
-      step = step
-    ) |>
-    httr2::req_perform() |>
-    httr2::resp_check_status() |>
-    httr2::resp_body_json(simplifyVector = TRUE, simplifyDataFrame = TRUE)
-}
+Storing large amounts of data in the cloud can incur significant ongoing costs if not done optimally. We are developing [technical strategies and policies](https://nasa-openscapes.github.io/earthdata-cloud-cookbook/policies-admin/data-policies.html) to reduce storage costs that will keep the Openscapes 2i2c Hub a shared resource for us all to use, while also providing reusable strategies for other admins.
 
 
-query_prometheus_instant <- function(
-    grafana_url = "https://grafana.openscapes.2i2c.cloud",
-    grafana_token = Sys.getenv("GRAFANA_TOKEN"),
-    prometheus_uid = get_default_prometheus_uid(grafana_url, grafana_token),
-    query) {
-  # Query data from prometheus & return responses
-  #
-  # Args:
-  #     grafana_url (str): URL of Grafana to use to query. Must end in a trailing slash
-  #     grafana_token (str): Token of grafana service account with Viewer permissions to use
-  #     prometheus_uid (str): uid of prometheus datasource within grafana to query
-  #     query (str): Prometheus query to execute
-
-  #
-  # Returns:
-  #     Query responses, in the [instant vector format](https://prometheus.io/docs/prometheus/latest/querying/api/#range-vectors)
-  #
-  #     [
-  #       {
-  #         "metric": { "<label_name>": "<label_value>", ... },
-  #         "value": [ <unix_time>, "<sample_value>" ],
-  #         "histogram": [ <unix_time>, <histogram> ]
-  #       },
-  #       ...
-  #     ]
-
-  httr2::request(grafana_url) |>
-    httr2::req_url_path("/api/datasources/proxy/uid", prometheus_uid, "api/v1/query") |>
-    httr2::req_auth_bearer_token(grafana_token) |>
-    httr2::req_url_query(
-      query = query
-    ) |>
-    httr2::req_perform() |>
-    httr2::resp_check_status() |>
-    httr2::resp_body_json(simplifyVector = TRUE)
-}
-
-
-
-```
-
-```{r}
+```{r setup}
+#| include: false
 library(dplyr)
 library(kyber)
 library(ggplot2)
 library(forcats)
+library(lubridate)
+library(paws)
+library(here)
 
-current_size <- query_prometheus_instant(
-  query = "max(dirsize_total_size_bytes) by (directory)"
+source(here("storage-report/R/prometheus-utils.R"))
+source(here("storage-report/R/aws-ce-utils.R"))
+
+start_date <- ym(params$year_month)
+end_date <- ceiling_date(start_date, unit = "month") - days(1)
+
+cost_explorer <- paws::costexplorer()
+```
+
+## Total Costs
+
+```{r}
+
+# https://www.paws-r-sdk.com/docs/costexplorer_get_cost_and_usage/
+# https://docs.aws.amazon.com/aws-cost-management/latest/APIReference/API_GetDimensionValues.html
+res <- cost_explorer$get_cost_and_usage(
+  TimePeriod = list(Start = end_date - months(6) + days(1), End = end_date),
+  Granularity = "MONTHLY",
+  Filter = list(Dimensions = list(
+    Key = "RECORD_TYPE",
+    Values = "Usage"
+  )),
+  Metrics = "UnblendedCost"
 )
+
+totaly_monthly_usage_costs <- ce_to_df(res)
+```
+
+```{r}
+monthly_size <- query_prometheus_range(
+  query = "max(dirsize_total_size_bytes{namespace='prod'})",
+  start_time = end_date - months(6),
+  end_time = end_date,
+  step = 60 * 60 * 24 * 30
+) |>
+  create_range_df(value_name = "size")
+```
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
 
 size_by_date <- query_prometheus_range(
-  query = "max(dirsize_total_size_bytes) by (directory)",
-  start_time = "2024-01-01",
-  end_time = "2024-05-28",
+  query = "max(dirsize_total_size_bytes) by (directory, namespace)",
+  start_time = start_date,
+  end_time = end_date,
   step = 60 * 60 * 24
-)
-
-dirs <- size_by_date$data$result$metric$directory
-vals <- size_by_date$data$result$values
-
-df <- lapply(seq_along(vals), \(x) {
-  vals <- as.data.frame(vals[[x]])
-  vals$dir <- dirs[x]
-  vals
-}) |>
-  dplyr::bind_rows() |>
-  rename(date = V1, size = V2) |>
+) |>
+  create_range_df(value_name = "size") |>
   mutate(
-    date = as.POSIXct(as.numeric(date), origin = "1970-01-01", tz = "UTC"),
-    size = as.numeric(size) * 9.3132257461548e-10,
-    username = gsub("-2d", "-", dir)
+    directory = unsanitize_dir_names(directory)
   )
 
-team_members <- list_team_members(
-  team = "nasa-champions-2024",
-  org = "nasa-openscapes-workshops",
+# list_teams("nasa-openscapes")
+# list_teams("nasa-openscapes-workshops")
+
+lt_access_members <- list_team_members(
+  team = "LongtermAccess-2i2c",
+  org = "nasa-openscapes",
   names_only = TRUE
 ) |>
   tolower()
 
-setdiff(team_members, unique(df$username))
-
-champs_df <- filter(
-  df,
-  username %in% team_members,
-  date >= as.Date("2024-04-01"),
-  !username %in% unique(df$username[df$date <= as.Date("2024-03-31")])
+champions_members <- list_team_members(
+  team = "nasa-champions-2024",
+  org = "nasa-openscapes-workshops",
+  names_only = TRUE
 ) |>
-  mutate(username = fct_reorder(username, desc(size), .fun = max, .desc = TRUE))
+  tolower() |>
+  setdiff(lt_access_members)
 
-df_sum_by_date <- df |>
-  group_by(date) |>
+teams <- data.frame(
+  team = "NASA Champions 2024",
+  user = champions_members
+) |>
+  bind_rows(
+    data.frame(
+      team = "Long Term Access",
+      user = lt_access_members
+    )
+  )
+
+# setdiff(champions_members, unique(size_by_date$directory))
+
+size_by_date <- size_by_date |>
+  left_join(
+    teams,
+    by = join_by(directory == user)
+  ) |>
+  mutate(
+    team = ifelse(namespace == "workshop", NA, team),
+    directory = fct_reorder(directory, desc(size), .fun = max, .desc = TRUE)
+  )
+
+all_dirs_sum_by_date <- size_by_date |>
+  filter(namespace %in% c("prod", "workshop")) |>
+  group_by(namespace, date, team) |>
   summarize(total_size_gb = sum(size))
 
-ggplot(df_sum_by_date, aes(x = date, y = total_size_gb)) +
-  geom_area(fill = "#9D4076") +
+all_dirs_sum_by_date |>
+  ggplot(aes(x = date, y = total_size_gb)) +
+  geom_area(aes(fill = team)) +
+  facet_grid(vars(namespace), scales = "free_y") +
+  theme(legend.position = "bottom", legend.title.position = "top") +
   labs(x = "Date", y = "Size (GiB)") +
   theme_classic()
 
-ggplot(champs_df, aes(x = date, y = size, fill = username)) +
+size_by_date |>
+  filter(team == "NASA Champions 2024") |>
+  ggplot(aes(x = date, y = size, fill = directory)) +
   geom_area() +
-  paletteer::scale_fill_paletteer_d("khroma::soil", guide = FALSE) +
-  geom_vline(xintercept = as.Date("2024-04-17"), colour = "black") +
+  paletteer::scale_fill_paletteer_d("khroma::soil", guide = "none") +
   labs(x = "Date", y = "Size (GiB)") +
   theme_classic()
 
 ```
 
 ```{r}
-library(paws)
 
 cost_explorer <- paws::costexplorer()
-
-start_date <- format(Sys.Date() - 60)
-end_date <- format(Sys.Date() + 1)
 
 # https://www.paws-r-sdk.com/docs/costexplorer_get_cost_and_usage/
 # https://docs.aws.amazon.com/aws-cost-management/latest/APIReference/API_GetDimensionValues.html
@@ -213,47 +177,6 @@ res <- cost_explorer$get_cost_and_usage(
   )
 )
 
-ce_to_df <- function(ce_result) {
-  dimension_names <- tolower(
-    vapply(ce_result$GroupDefinitions, `[[`, "Key", FUN.VALUE = character(1))
-  )
-
-  res_by_time <- Filter(\(y) length(y$Groups) > 0, ce_result$ResultsByTime)
-
-  df_list <- lapply(
-    res_by_time,
-    results_by_time_to_df,
-    keynames = dimension_names
-  )
-
-  purrr::list_rbind(df_list)
-}
-
-results_by_time_to_df <- function(x, keynames) {
-  date <- as.Date(x$TimePeriod$Start)
-
-  keys <- purrr::list_rbind(
-    lapply(x$Groups, \(x) {
-      as.data.frame(
-        t(x[["Keys"]])
-      )
-    })
-  )
-
-  names(keys) <- keynames
-
-  amount_usd <- vapply(
-    x$Groups, \(x) {
-      as.numeric(x$Metrics$UnblendedCost$Amount)
-    },
-    FUN.VALUE = numeric(1)
-  )
-
-  estimated <- x$Estimated
-
-  cbind(date, keys, amount_usd, estimated)
-}
-
 usage_costs <- ce_to_df(res)
 ```
 
@@ -270,12 +193,12 @@ services_to_ignore <- usage_costs |>
 
 cost_by_service <- usage_costs |>
   anti_join(services_to_ignore, by = "service") |>
-  group_by(date, service) |>
+  group_by(end_date, service) |>
   summarize(
     cost = sum(amount_usd),
     .groups = "drop"
   ) |>
-  arrange(date) |>
+  arrange(end_date) |>
   mutate(
     cum_cost = cumsum(cost),
     .by = "service"
@@ -287,7 +210,7 @@ cost_by_service <- usage_costs |>
 ggplot(
   cost_by_service,
   aes(
-    x = date, y = cost,
+    x = end_date, y = cost,
     fill = fct_reorder(service, desc(cost), .fun = sum, .desc = TRUE)
   )
 ) +
@@ -302,9 +225,13 @@ ggplot(
     fill = "AWS Service"
   )
 
-ggplot(cost_by_service, aes(x = date, y = cost, colour = service)) +
+ggplot(cost_by_service, aes(x = end_date, y = cost, colour = service)) +
   geom_line() +
-  facet_wrap(vars(service), scales = "free_y") +
+  facet_wrap(vars(service), scales = "free_y", ncol = 2) +
   paletteer::scale_colour_paletteer_d("ggpomological::pomological_palette", direction = 1, guide = "none") +
-  theme_classic()
+  theme_classic() +
+  labs(
+    x = "Date",
+    y = "Daily cost ($)"
+  )
 ```
