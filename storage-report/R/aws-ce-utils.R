@@ -1,4 +1,4 @@
-ce_to_df <- function(ce_result) {
+ce_to_df <- function(ce_result, metric = "UnblendedCost") {
   dimension_names <- tolower(
     vapply(ce_result$GroupDefinitions, `[[`, "Key", FUN.VALUE = character(1))
   )
@@ -12,13 +12,14 @@ ce_to_df <- function(ce_result) {
   df_list <- lapply(
     res_by_time,
     results_by_time_to_df,
-    keynames = dimension_names
+    keynames = dimension_names,
+    metric = metric
   )
 
   purrr::list_rbind(df_list)
 }
 
-results_by_time_to_df <- function(x, keynames) {
+results_by_time_to_df <- function(x, keynames, metric) {
   start_date <- as.Date(x$TimePeriod$Start)
   end_date <- as.Date(x$TimePeriod$End)
 
@@ -34,15 +35,15 @@ results_by_time_to_df <- function(x, keynames) {
 
     names(keys) <- keynames
 
-    amount_usd <- vapply(
+    metric_val <- vapply(
       x$Groups, \(x) {
-        as.numeric(x$Metrics$UnblendedCost$Amount)
+        as.numeric(x$Metrics[[metric]]$Amount)
       },
       FUN.VALUE = numeric(1)
     )
   } else {
     # No groups
-    amount_usd <- as.numeric(x$Total$UnblendedCost$Amount)
+    metric_val <- as.numeric(x$Total[[metric]]$Amount)
     keys <- NULL
   }
 
@@ -52,7 +53,7 @@ results_by_time_to_df <- function(x, keynames) {
     start_date = start_date,
     end_date = end_date,
     keys,
-    amount_usd = amount_usd,
+    {{ metric }} := metric_val,
     estimated = estimated
   )
 }

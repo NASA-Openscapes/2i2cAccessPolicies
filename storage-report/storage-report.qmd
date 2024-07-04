@@ -55,7 +55,9 @@ cost_explorer <- paws::costexplorer()
 theme_set(theme_classic())
 ```
 
-## Total Costs
+## Month over month changes
+
+### Total Costs
 
 ```{r total-costs}
 
@@ -73,15 +75,16 @@ total_monthly_usage_costs <- cost_explorer$get_cost_and_usage(
   ce_to_df()
 
 ggplot(total_monthly_usage_costs) +
-  geom_line(aes(x = start_date, y = amount_usd)) +
+  geom_line(aes(x = start_date, y = UnblendedCost)) +
   labs(
-    title = "Monthly total cost of all AWS Services for running the NASA Openscapes 2i2c Hub",
+    title = "Monthly total cost of all AWS Services for running the\nNASA Openscapes 2i2c Hub",
     x = "Month",
     y = "Monthly cost ($)"
   )
 ```
 
 ```{r monthly-costs-by-service}
+#| fig-height: 8
 
 monthly_costs_by_service <- cost_explorer$get_cost_and_usage(
   TimePeriod = list(Start = ceiling_date(end_date - months(6), unit = "month"), End = end_date),
@@ -103,21 +106,21 @@ monthly_costs_by_service <- cost_explorer$get_cost_and_usage(
 monthly_costs_by_service |>
   group_by(start_date, end_date) |>
   mutate(service = case_when(
-    amount_usd < 1 ~ "Other",
+    UnblendedCost < 1 ~ "Other",
     .default = service
   )) |>
   group_by(start_date, end_date, service) |>
   summarise(
-    amount_usd = sum(amount_usd, na.rm = TRUE),
+    UnblendedCost = sum(UnblendedCost, na.rm = TRUE),
     .groups = "drop"
   ) |>
   mutate(
-    service = fct_reorder(service, desc(amount_usd), .fun = mean, .desc = TRUE)
+    service = fct_reorder(service, desc(UnblendedCost), .fun = mean, .desc = TRUE)
   ) |>
-  ggplot(aes(x = start_date, y = amount_usd, fill = service)) +
+  ggplot(aes(x = start_date, y = UnblendedCost, fill = service)) +
   geom_col() +
   paletteer::scale_fill_paletteer_d("ggpomological::pomological_palette", direction = -1) +
-  guides(fill = guide_legend(nrow = 3)) +
+  guides(fill = guide_legend(ncol = 2)) +
   theme(legend.position = "bottom", legend.title.position = "top") +
   labs(
     title = "Monthly cost of AWS Services",
@@ -129,7 +132,7 @@ monthly_costs_by_service |>
 
 ```
 
-## Size of user home directories
+### Storage
 
 ```{r}
 monthly_size <- query_prometheus_range(
@@ -143,13 +146,17 @@ monthly_size <- query_prometheus_range(
 ggplot(monthly_size) +
   geom_col(aes(x = date, y = size)) +
   labs(
-    title = "Total size of user home directories in AWS EFS",
+    title = "Total size of user home directories in AWS EFS\nin the main Hub",
     x = "Month",
     y = "Total Size (GB)"
   )
 ```
 
-```{r}
+## Detailed breakdown for the month of `r format(start_date, "%B")`
+
+### Home directory sizes
+
+```{r homedir-size-by-date}
 size_by_date <- query_prometheus_range(
   query = "max(dirsize_total_size_bytes) by (directory, namespace)",
   start_time = start_date,
@@ -198,7 +205,7 @@ size_by_date <- size_by_date |>
     by = join_by(directory == user)
   ) |>
   mutate(
-    team = ifelse(namespace == "workshop", NA, team),
+    team = ifelse(namespace == "workshop", "N/A", team),
     directory = fct_reorder(directory, desc(size), .fun = max, .desc = TRUE)
   )
 
@@ -207,29 +214,49 @@ all_dirs_sum_by_date <- size_by_date |>
   group_by(namespace, date, team) |>
   summarize(total_size_gb = sum(size)) |>
   mutate(
+    team = ifelse(is.na(team) & namespace == "prod", "Other", team),
     team = fct_reorder(team, desc(total_size_gb), .fun = max, .desc = TRUE)
   )
+```
 
+```{r homedir-size-over-time}
 all_dirs_sum_by_date |>
   ggplot(aes(x = date, y = total_size_gb)) +
   geom_area(aes(fill = team)) +
   facet_grid(vars(namespace), scales = "free_y") +
   theme(legend.position = "bottom", legend.title.position = "top") +
-  labs(x = "Date", y = "Size (GiB)")
+  paletteer::scale_fill_paletteer_d("ggpomological::pomological_palette") +
+  labs(
+    title = "Total size of user home directoryies by access team\nand hub namespace",
+    x = "Date",
+    y = "Size (GiB)",
+  )
+```
 
+```{r homedir-size-champions}
 size_by_date |>
   filter(team == "NASA Champions 2024") |>
   ggplot(aes(x = date, y = size, fill = directory)) +
   geom_area() +
   paletteer::scale_fill_paletteer_d("khroma::soil", guide = "none") +
-  labs(x = "Date", y = "Size (GiB)")
+  labs(
+    title = "Size of home directories by user for 2024 Champions cohort",
+    x = "Date",
+    y = "Size (GiB)"
+  )
 
 ```
 
-```{r}
+### Compute costs and usage
+
+```{r ec2-costs}
 # https://www.paws-r-sdk.com/docs/costexplorer_get_cost_and_usage/
 # https://docs.aws.amazon.com/aws-cost-management/latest/APIReference/API_GetDimensionValues.html
-ec2_instance_type_costs <- cost_explorer$get_cost_and_usage(
+
+# TODO: modify ce_to_df to deal with an arbitrary number of metrics so
+# we can do this in one call with `Metrics = list("UnblendedCost", "UsageQuantity")
+# and pass it to ce_to_df() once, rather than joining
+ec2_instance_type_costs_usage_res <- cost_explorer$get_cost_and_usage(
   TimePeriod = list(Start = start_date, End = end_date),
   Granularity = "DAILY",
   Filter = list(
@@ -242,7 +269,7 @@ ec2_instance_type_costs <- cost_explorer$get_cost_and_usage(
       Values = "Amazon Elastic Compute Cloud - Compute"
     )
   ),
-  Metrics = "UnblendedCost",
+  Metrics = list("UnblendedCost", "UsageQuantity"),
   GroupBy = list(
     list(
       Type = "DIMENSION",
@@ -253,17 +280,48 @@ ec2_instance_type_costs <- cost_explorer$get_cost_and_usage(
       Key = "INSTANCE_TYPE"
     )
   )
-) |>
-  ce_to_df() |>
+)
+
+# Join costs and usage hours
+ec2_instance_type_costs_usage <- ec2_instance_type_costs_usage_res |>
+  ce_to_df(metric = "UnblendedCost") |>
+  left_join(
+    ce_to_df(ec2_instance_type_costs_usage_res, metric = "UsageQuantity"),
+    by = c("start_date", "end_date", "service", "instance_type")
+  ) |>
   filter(
     instance_type != "NoInstanceType"
   )
 
-ec2_instance_type_costs |>
-  mutate(instance_type = fct_reorder(instance_type, desc(amount_usd), .fun = max, .desc = TRUE)) |>
-  ggplot(aes(x = start_date, y = amount_usd, fill = instance_type)) +
+instances <- unique(ec2_instance_type_costs_usage$instance_type)
+
+instance_palette <- paletteer::paletteer_d(
+  "ggpomological::pomological_palette",
+  n = length(instances)
+) |>
+  setNames(instances)
+```
+
+```{r daily-usage-by-instance}
+ec2_instance_type_costs_usage |>
+  mutate(instance_type = fct_reorder(instance_type, desc(UsageQuantity), .fun = max, .desc = TRUE)) |>
+  ggplot(aes(x = start_date, y = UsageQuantity, fill = instance_type)) +
   geom_col() +
-  paletteer::scale_fill_paletteer_d("ggpomological::pomological_palette", direction = -1) +
+  scale_fill_manual(values = instance_palette) +
+  labs(
+    title = "Daily EC2 usage by instance type",
+    x = "Date",
+    y = "Usage (hours)",
+    fill = "EC2 Instance Type"
+  )
+```
+
+```{r daily-cost-by-instance}
+ec2_instance_type_costs_usage |>
+  mutate(instance_type = fct_reorder(instance_type, desc(UnblendedCost), .fun = max, .desc = TRUE)) |>
+  ggplot(aes(x = start_date, y = UnblendedCost, fill = instance_type)) +
+  geom_col() +
+  scale_fill_manual(values = instance_palette) +
   labs(
     title = "Daily EC2 cost by instance type",
     x = "Date",
@@ -272,31 +330,19 @@ ec2_instance_type_costs |>
   )
 ```
 
-```{r}
-
-ggplot(
-  cost_by_service,
-  aes(
-    x = end_date, y = cost,
-    fill = fct_reorder(service, desc(cost), .fun = sum, .desc = TRUE)
-  )
-) +
-  geom_col() +
-  paletteer::scale_fill_paletteer_d("ggpomological::pomological_palette", direction = -1) +
-  guides(fill = guide_legend(nrow = 3))
-theme(legend.position = "bottom", legend.title.position = "top") +
+```{r total-usage-vs-cost-by-instance}
+ec2_instance_type_costs_usage |>
+  group_by(instance_type) |>
+  summarize(
+    total_hours = sum(UsageQuantity),
+    total_cost = sum(UnblendedCost)
+  ) |>
+  ggplot(aes(x = total_hours, y = total_cost, colour = instance_type)) +
+  geom_point(size = 5) +
+  scale_colour_manual(values = instance_palette) +
   labs(
-    x = "Date",
-    y = "Daily cost ($)",
-    fill = "AWS Service"
-  )
-
-ggplot(cost_by_service, aes(x = end_date, y = cost, colour = service)) +
-  geom_line() +
-  facet_wrap(vars(service), scales = "free_y", ncol = 2) +
-  paletteer::scale_colour_paletteer_d("ggpomological::pomological_palette", direction = 1, guide = "none") +
-  labs(
-    x = "Date",
-    y = "Daily cost ($)"
+    title = "Total cost vs hours on different EC2 instance types",
+    x = "Hours",
+    y = "EC2 Instance Type"
   )
 ```
