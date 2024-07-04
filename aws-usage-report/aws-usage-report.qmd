@@ -6,6 +6,12 @@ subtitle: "Monthly report for `r format(lubridate::ym(params$year_month), '%B %Y
 format: pdf
 ---
 
+<!-- 
+To render this using the quarto cli use:
+ym="2024-06" # set the year and month parameter
+quarto render aws-usage-report/aws-usage-report.qmd -P year_month:$ym --output "aws-usage-report_$ym.pdf"
+ -->
+
 ### Introduction
 
 A key objective of NASA Openscapes is to minimize “the time to science” for researchers. Cloud infrastructure can facilitate shortening this time. We use a 2i2c-managed JupyterHub, which lets us work in the cloud next to NASA Earthdata in AWS US-West-2. The purpose of the JupyterHub is to provide initial, exploratory experiences accessing NASA Earthdata in the cloud. It is not meant to be a long-term solution to support on-going science work or software development. For those users that decide working in the Cloud is advantageous and want to move there, we support a migration from the Hub to their own environment through Coiled.io, and are working on other "fledging" pathways.
