@@ -1,18 +1,19 @@
 ---
 title: "NASA Openscapes 2i2c JupyterHub\nUsage and Costs"
 params:
-  year_month: "2024-05"
+  year_month: "2024-06"
 subtitle: "Monthly report for `r format(lubridate::ym(params$year_month), '%B %Y')`"
 format: pdf
 ---
 
 <!-- 
 To render this using the quarto cli use:
+
 ym="2024-06" # set the year and month parameter
 quarto render aws-usage-report/aws-usage-report.qmd -P year_month:$ym --output "aws-usage-report_$ym.pdf"
  -->
 
-### Introduction
+## Introduction
 
 A key objective of NASA Openscapes is to minimize “the time to science” for researchers. Cloud infrastructure can facilitate shortening this time. We use a 2i2c-managed JupyterHub ("Hub"), which lets us work in the cloud next to NASA Earthdata in AWS US-West-2. The purpose of the JupyterHub is to provide initial, exploratory experiences accessing NASA Earthdata in the cloud. It is not meant to be a long-term solution to support on-going science work or software development. For those users that decide working in the Cloud is advantageous and want to move there, we support a migration from the Hub to their own environment through Coiled.io, and are working on other "fledging" pathways.
 
@@ -42,6 +43,7 @@ library(lubridate)
 library(paws)
 library(here)
 library(glue)
+library(patchwork)
 
 knitr::opts_chunk$set(
   echo = FALSE,
@@ -90,7 +92,7 @@ total_monthly_cost <- total_monthly_usage_costs$UnblendedCost[
   total_monthly_usage_costs$start_date == start_date
 ]
 
-ggplot(total_monthly_usage_costs) +
+total_monthly_cost_plot <- ggplot(total_monthly_usage_costs) +
   geom_line(aes(x = start_date, y = UnblendedCost)) +
   labs(
     title = glue::glue(
@@ -103,7 +105,7 @@ ggplot(total_monthly_usage_costs) +
 ```
 
 ```{r monthly-costs-by-service}
-#| fig-height: 8
+#| fig-height: 7
 
 monthly_costs_by_service <- cost_explorer$get_cost_and_usage(
   TimePeriod = list(Start = ceiling_date(end_date %m-% months(6), unit = "month"), End = end_date),
@@ -122,7 +124,7 @@ monthly_costs_by_service <- cost_explorer$get_cost_and_usage(
 ) |>
   ce_to_df()
 
-monthly_costs_by_service |>
+monthly_cost_service_summary <- monthly_costs_by_service |>
   group_by(start_date, end_date) |>
   mutate(service = case_when(
     UnblendedCost < 1 ~ "Other",
@@ -135,8 +137,12 @@ monthly_costs_by_service |>
   ) |>
   mutate(
     service = fct_reorder(service, desc(UnblendedCost), .fun = mean, .desc = TRUE)
-  ) |>
-  ggplot(aes(x = start_date, y = UnblendedCost, fill = service)) +
+  )
+
+  monthly_cost_by_service_plot <- ggplot(
+    monthly_cost_service_summary,
+    aes(x = start_date, y = UnblendedCost, fill = service)
+    ) +
   geom_col() +
   paletteer::scale_fill_paletteer_d("ggpomological::pomological_palette", direction = -1) +
   guides(fill = guide_legend(ncol = 2)) +
@@ -149,6 +155,8 @@ monthly_costs_by_service |>
     fill = "AWS Service"
   )
 
+total_monthly_cost_plot / monthly_cost_by_service_plot
+
 ```
 
 ### Storage
@@ -156,14 +164,15 @@ monthly_costs_by_service |>
 ```{r}
 monthly_size <- query_prometheus_range(
   query = "max(dirsize_total_size_bytes{namespace='prod'})",
-  start_time = end_date %m-% months(6),
+  start_time = floor_date(end_date, unit = "months") %m-% months(5),
   end_time = end_date,
-  step = 60 * 60 * 24 * 30
+  step = 60 * 60 * 24
 ) |>
   create_range_df(value_name = "size")
 
-ggplot(monthly_size) +
-  geom_col(aes(x = date, y = size)) +
+monthly_size |> 
+ggplot() +
+  geom_line(aes(x = date, y = size)) +
   labs(
     title = "Total size of user home directories in AWS EFS\nin the main Hub",
     x = "Month",
