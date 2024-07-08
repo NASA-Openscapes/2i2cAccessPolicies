@@ -1,5 +1,5 @@
 ---
-title: "NASA Openscapes Jupyter Hub Usage and Costs"
+title: "NASA Openscapes 2i2c JupyterHub\nUsage and Costs"
 params:
   year_month: "2024-05"
 subtitle: "Monthly report for `r format(lubridate::ym(params$year_month), '%B %Y')`"
@@ -14,7 +14,7 @@ quarto render aws-usage-report/aws-usage-report.qmd -P year_month:$ym --output "
 
 ### Introduction
 
-A key objective of NASA Openscapes is to minimize “the time to science” for researchers. Cloud infrastructure can facilitate shortening this time. We use a 2i2c-managed JupyterHub, which lets us work in the cloud next to NASA Earthdata in AWS US-West-2. The purpose of the JupyterHub is to provide initial, exploratory experiences accessing NASA Earthdata in the cloud. It is not meant to be a long-term solution to support on-going science work or software development. For those users that decide working in the Cloud is advantageous and want to move there, we support a migration from the Hub to their own environment through Coiled.io, and are working on other "fledging" pathways.
+A key objective of NASA Openscapes is to minimize “the time to science” for researchers. Cloud infrastructure can facilitate shortening this time. We use a 2i2c-managed JupyterHub ("Hub"), which lets us work in the cloud next to NASA Earthdata in AWS US-West-2. The purpose of the JupyterHub is to provide initial, exploratory experiences accessing NASA Earthdata in the cloud. It is not meant to be a long-term solution to support on-going science work or software development. For those users that decide working in the Cloud is advantageous and want to move there, we support a migration from the Hub to their own environment through Coiled.io, and are working on other "fledging" pathways.
 
 The main costs of running the JupyterHub come from two sources:
 
@@ -27,7 +27,7 @@ not running.
 
 Storing large amounts of data in the cloud can incur significant ongoing costs if not done optimally. We are developing [technical strategies and policies](https://nasa-openscapes.github.io/earthdata-cloud-cookbook/policies-admin/data-policies.html) to reduce storage costs that will keep the Openscapes 2i2c Hub a shared resource for us all to use, while also providing reusable strategies for other admins.
 
-This report is intended to give a monthly summary of usage of the hub and its 
+This report is intended to give a monthly summary of usage of the Hub and its 
 resources, by tracking metrics on costs and usage of key components of storage (EFS)
 and compute (EC2).
 
@@ -235,7 +235,7 @@ all_dirs_sum_by_date |>
   theme(legend.position = "bottom", legend.title.position = "top") +
   paletteer::scale_fill_paletteer_d("ggpomological::pomological_palette") +
   labs(
-    title = "Total size of user home directoryies by access team\nand hub namespace",
+    title = "Total size of user home directories by access team\nand Hub namespace",
     x = "Date",
     y = "Size (GiB)",
   )
