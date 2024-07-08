@@ -349,8 +349,8 @@ ec2_instance_type_costs_usage |>
   geom_point(size = 5) +
   scale_colour_manual(values = instance_palette) +
   labs(
-    title = "Total cost vs hours on different EC2 instance types",
-    x = "Hours",
-    y = "EC2 Instance Type"
+    title = paste("Total cost vs hours on different EC2 instance types\nin", format(start_date, "%B %Y")),
+    x = "Total Hours",
+    y = "Total Cost ($)"
   )
 ```
