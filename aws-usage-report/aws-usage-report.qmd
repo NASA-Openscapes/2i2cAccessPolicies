@@ -41,6 +41,7 @@ library(forcats)
 library(lubridate)
 library(paws)
 library(here)
+library(glue)
 
 knitr::opts_chunk$set(
   echo = FALSE,
@@ -57,6 +58,9 @@ if (interactive()) {
 
 start_date <- ym(params$year_month)
 end_date <- ceiling_date(start_date, unit = "month") - days(1)
+
+reporting_month <- format(start_date, "%B")
+reporting_my <- format(start_date, "%B %Y")
 
 cost_explorer <- paws::costexplorer()
 
@@ -82,10 +86,17 @@ total_monthly_usage_costs <- cost_explorer$get_cost_and_usage(
 ) |>
   ce_to_df()
 
+total_monthly_cost <- total_monthly_usage_costs$UnblendedCost[
+  total_monthly_usage_costs$start_date == start_date
+]
+
 ggplot(total_monthly_usage_costs) +
   geom_line(aes(x = start_date, y = UnblendedCost)) +
   labs(
-    title = "Monthly total cost of all AWS Services for running the\nNASA Openscapes 2i2c Hub",
+    title = glue::glue(
+      "The total cost of all AWS Services for running the NASA\nOpenscapes 2i2c",  
+      "Hub in {reporting_my} was ${round(total_monthly_cost)}"
+      ),
     x = "Month",
     y = "Monthly cost ($)"
   )
@@ -349,7 +360,9 @@ ec2_instance_type_costs_usage |>
   geom_point(size = 5) +
   scale_colour_manual(values = instance_palette) +
   labs(
-    title = paste("Total cost vs hours on different EC2 instance types\nin", format(start_date, "%B %Y")),
+    title = glue::glue(
+      "Total cost vs hours on different EC2 instance types\nin {reporting_my}"
+    ),
     x = "Total Hours",
     y = "Total Cost ($)"
   )
