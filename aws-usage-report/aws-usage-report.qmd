@@ -212,8 +212,8 @@ given medium to long-term access, as NASA mentors, Champions participants, etc.
 [Access is managed via GitHub](https://nasa-openscapes.github.io/earthdata-cloud-cookbook/policies-admin/add-folks-to-2i2c-github-teams.html) by assigning user's GitHub usernames to specific 
 teams. 
 
-The workshop namespace is used specifically for large workshops and access
-is granted on the day of the workshop by use of a shared password rather
+The "workshop" namespace is used specifically for large workshops and access
+is granted on the day of the workshop by use of a [shared password](https://nasa-openscapes.github.io/earthdata-cloud-cookbook/policies-admin/leading-workshops.html\#workshop-hub-access-via-shared-password) rather
 than using GitHub teams. Access is short-term and usually revoked a week after
 the workshop, at which point users' home directories are removed.
 
