@@ -27,7 +27,7 @@ fixed - we pay for "data at rest", with
 [ongoing daily costs/GB](https://aws.amazon.com/efs/pricing/) even while the 
 Hub is not running.
 
-Storing large amounts of data in the cloud can incur significant ongoing costs if not done optimally. We are developing [technical strategies and policies](https://nasa-openscapes.github.io/earthdata-cloud-cookbook/policies-admin/data-policies.html) to reduce storage costs that will keep the Openscapes 2i2c Hub a shared resource for us all to use, while also providing reusable strategies for other admins.
+Storing large amounts of data in the cloud can incur significant ongoing costs if not done optimally. We are developing [technical strategies and policies](https://nasa-openscapes.github.io/earthdata-cloud-cookbook/policies-admin/data-policies.html) in the Earthdata Cloud Cookbook to reduce storage costs that will keep the Openscapes 2i2c Hub a shared resource for us all to use, while also providing reusable strategies for other admins.
 
 This report is intended to give a monthly summary of usage of the Hub and its 
 resources, by tracking metrics on costs and usage of key components of storage (EFS)
@@ -155,7 +155,7 @@ monthly_cost_service_summary <- monthly_costs_by_service |>
   guides(fill = guide_legend(ncol = 2)) +
   theme(legend.position = "bottom", legend.title.position = "top") +
   labs(
-    title = "Monthly cost of AWS Services",
+    title = "Monthly cost of AWS Services. Largest costs are EC2 compute (red) and EFS storage (green)",
     caption = "*Services costing less than $1/month are grouped into 'Other'",
     x = "Month",
     y = "Monthly cost ($)",
@@ -219,7 +219,7 @@ the workshop, at which point users' home directories are removed.
 
 The following figure shows the total size of home directories by namespace. Note
 the different y axis scales in each panel. The "prod" namespace panel is broken
-out by access team (Long-Term Access and NASA Champions 2024).
+out by access team (Long-Term Access and NASA Champions 2024); the "workshop" namespace panel has "Team" as N/A since users are not added via a GitHub Team.
 
 ```{r homedir-size-by-date}
 size_by_date <- query_prometheus_range(
@@ -305,7 +305,7 @@ It is also helpful to look more deeply into the Champions cohort to see how
 they are using the Hub, and how much storage is being used. The following
 figure breaks down the home directory size of Champions by user - usernames
 are not displayed, but we can see if any users are using a disproportionate amount
-of space.
+of space. When we see disproportionate amount of space used, we reach out to users and work with them to reduce their storage, and update the [Cookbook tutorials](https://nasa-openscapes.github.io/earthdata-cloud-cookbook/policies-admin/data-policies.html) as needed.
 
 ```{r homedir-size-champions}
 size_by_date |>
