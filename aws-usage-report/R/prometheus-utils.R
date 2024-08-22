@@ -89,6 +89,7 @@ query_prometheus_instant <- function(
     query) {
   httr2::request(grafana_url) |>
     httr2::req_url_path("/api/datasources/proxy/uid", prometheus_uid, "api/v1/query") |>
+    httr2::req_options(http_version = 2) |>
     httr2::req_auth_bearer_token(grafana_token) |>
     httr2::req_url_query(
       query = query
@@ -137,7 +138,16 @@ query_prometheus_range <- function(
     start_time,
     end_time,
     step) {
-  httr2::request(grafana_url) |>
+  req <- httr2::request(grafana_url) |>
+    # Force HTTP version 2, I think there was a mismatch when not set and was
+    # getting the error:
+    #   Failed to perform HTTP request.
+    #   Caused by error in `curl::curl_fetch_memory()`:
+    #   ! Failed writing received data to disk/application.
+    # Use `curl --i https://grafana.openscapes.2i2c.cloud/api/` on
+    # command line to get supported HTTP version of server (it shows HTTP/2)
+    # See curl::curl_symbols("http_version") for http version values
+    httr2::req_options(http_version = 2) |>
     httr2::req_url_path("/api/datasources/proxy/uid", prometheus_uid, "api/v1/query_range") |>
     httr2::req_auth_bearer_token(grafana_token) |>
     httr2::req_url_query(
