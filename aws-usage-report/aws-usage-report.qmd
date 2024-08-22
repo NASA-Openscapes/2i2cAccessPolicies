@@ -103,9 +103,9 @@ total_monthly_cost_plot <- ggplot(total_monthly_usage_costs) +
   geom_line(aes(x = start_date, y = UnblendedCost)) +
   labs(
     title = glue::glue(
-      "The total cost of all AWS Services for running the NASA\nOpenscapes 2i2c",  
+      "The total cost of all AWS Services for running the NASA\nOpenscapes 2i2c",
       "Hub in {reporting_my} was ${round(total_monthly_cost)}"
-      ),
+    ),
     x = "Month",
     y = "Monthly cost ($)"
   )
@@ -132,26 +132,17 @@ monthly_costs_by_service <- cost_explorer$get_cost_and_usage(
   ce_to_df()
 
 monthly_cost_service_summary <- monthly_costs_by_service |>
-  group_by(start_date, end_date) |>
-  mutate(service = case_when(
-    UnblendedCost < 1 ~ "Other",
-    .default = service
-  )) |>
-  group_by(start_date, end_date, service) |>
-  summarise(
-    UnblendedCost = sum(UnblendedCost, na.rm = TRUE),
-    .groups = "drop"
-  ) |>
+  ce_categories() |>
   mutate(
     service = fct_reorder(service, desc(UnblendedCost), .fun = mean, .desc = TRUE)
   )
 
-  monthly_cost_by_service_plot <- ggplot(
-    monthly_cost_service_summary,
-    aes(x = start_date, y = UnblendedCost, fill = service)
-    ) +
+monthly_cost_by_service_plot <- ggplot(
+  monthly_cost_service_summary,
+  aes(x = start_date, y = UnblendedCost, fill = service)
+) +
   geom_col() +
-  paletteer::scale_fill_paletteer_d("ggpomological::pomological_palette", direction = -1) +
+  scale_fill_discrete(type = aws_ce_palette) +
   guides(fill = guide_legend(ncol = 2)) +
   theme(legend.position = "bottom", legend.title.position = "top") +
   labs(
@@ -162,8 +153,8 @@ monthly_cost_service_summary <- monthly_costs_by_service |>
     fill = "AWS Service"
   )
 
+# Combine plots with patchwork
 total_monthly_cost_plot / monthly_cost_by_service_plot
-
 ```
 
 ### Storage
@@ -179,7 +170,7 @@ directories in the Hub over the past six months. The size of the home drives
 is directly correlated with the costs for "Amazon Elastic File System" in the 
 previous chart. 
 
-```{r}
+```{r monthly-storage}
 monthly_size <- query_prometheus_range(
   query = "max(dirsize_total_size_bytes{namespace='prod'})",
   start_time = floor_date(end_date, unit = "months") %m-% months(5),
@@ -188,10 +179,10 @@ monthly_size <- query_prometheus_range(
 ) |>
   create_range_df(value_name = "size")
 
-monthly_size |> 
-ggplot() +
+monthly_size |>
+  ggplot() +
   geom_line(aes(x = date, y = size)) +
-  scale_x_datetime(date_breaks = "1 month", date_labels = "%B") + 
+  scale_x_datetime(date_breaks = "1 month", date_labels = "%B") +
   labs(
     title = "Total size of user home directories in AWS EFS\nin the main Hub",
     x = "Month",
