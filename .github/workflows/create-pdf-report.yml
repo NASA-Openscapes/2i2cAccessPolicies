@@ -1,4 +1,5 @@
 on:
+  workflow_dispatch:
   schedule:
     - cron: '45 1 1 * *' # 1:45 am on 1st day of every month
 
