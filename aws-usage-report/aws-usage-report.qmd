@@ -134,7 +134,7 @@ monthly_costs_by_service <- cost_explorer$get_cost_and_usage(
 monthly_cost_service_summary <- monthly_costs_by_service |>
   ce_categories() |>
   mutate(
-    service = fct_reorder(service, desc(UnblendedCost), .fun = mean, .desc = TRUE)
+    service = fct_reorder(service, UnblendedCost, .fun = mean)
   )
 
 monthly_cost_by_service_plot <- ggplot(
@@ -142,7 +142,7 @@ monthly_cost_by_service_plot <- ggplot(
   aes(x = start_date, y = UnblendedCost, fill = service)
 ) +
   geom_col() +
-  scale_fill_discrete(type = aws_ce_palette) +
+  scale_fill_discrete(type = aws_ce_palette(n_distinct(monthly_cost_service_summary$service))) +
   guides(fill = guide_legend(ncol = 2)) +
   theme(legend.position = "bottom", legend.title.position = "top") +
   labs(
@@ -367,14 +367,6 @@ ec2_instance_type_costs_usage <- ec2_instance_type_costs_usage_res |>
   filter(
     instance_type != "NoInstanceType"
   )
-
-instances <- unique(ec2_instance_type_costs_usage$instance_type)
-
-instance_palette <- paletteer::paletteer_d(
-  "ggpomological::pomological_palette",
-  n = length(instances)
-) |>
-  setNames(instances)
 ```
 
 The following plots show the usage and costs broken down by instance type. The 
@@ -390,11 +382,13 @@ using [coiled](https://openscapes.org/blog/2023-11-07-coiled-openscapes/).
 charts -->
 
 ```{r daily-usage-by-instance}
-ec2_usage_plot <- ec2_instance_type_costs_usage |>
-  mutate(instance_type = fct_reorder(instance_type, desc(UsageQuantity), .fun = max, .desc = TRUE)) |>
-  ggplot(aes(x = start_date, y = UsageQuantity, fill = instance_type)) +
+ec2_usage_data <- ec2_instance_type_costs_usage |>
+  mutate(instance_type = fct_reorder(instance_type, UsageQuantity, .fun = sum))
+
+
+ec2_usage_plot <- ggplot(ec2_usage_data, aes(x = start_date, y = UsageQuantity, fill = instance_type)) +
   geom_col() +
-  scale_fill_manual(values = instance_palette) +
+  scale_fill_discrete(type = aws_ce_palette(n_distinct(ec2_usage_data$instance_type))) +
   labs(
     title = "Daily EC2 usage by instance type",
     x = "Date",
@@ -404,11 +398,13 @@ ec2_usage_plot <- ec2_instance_type_costs_usage |>
 ```
 
 ```{r daily-cost-by-instance}
-ec2_cost_plot <- ec2_instance_type_costs_usage |>
-  mutate(instance_type = fct_reorder(instance_type, desc(UnblendedCost), .fun = max, .desc = TRUE)) |>
-  ggplot(aes(x = start_date, y = UnblendedCost, fill = instance_type)) +
+ec2_cost_data <- ec2_instance_type_costs_usage |>
+  mutate(instance_type = fct_reorder(instance_type, UnblendedCost, .fun = max))
+
+ec2_cost_plot <-
+  ggplot(ec2_cost_data, aes(x = start_date, y = UnblendedCost, fill = instance_type)) +
   geom_col() +
-  scale_fill_manual(values = instance_palette) +
+  scale_fill_discrete(type = aws_ce_palette(n_distinct(ec2_cost_data$instance_type))) +
   labs(
     title = "Daily EC2 cost by instance type",
     x = "Date",
@@ -426,15 +422,16 @@ total cost by instance type, to understand both the highest cost and highest
 usage, as well as the cost-efficiency of the instance types.
 
 ```{r total-usage-vs-cost-by-instance}
-ec2_instance_type_costs_usage |>
+ec2_instance_data <- ec2_instance_type_costs_usage |>
   group_by(instance_type) |>
   summarize(
     total_hours = sum(UsageQuantity),
     total_cost = sum(UnblendedCost)
-  ) |>
-  ggplot(aes(x = total_hours, y = total_cost, colour = instance_type)) +
+  )
+
+ggplot(ec2_instance_data, aes(x = total_hours, y = total_cost, colour = instance_type)) +
   geom_point(size = 3) +
-  scale_colour_manual(values = instance_palette) +
+  scale_colour_discrete(type = aws_ce_palette(n_distinct(ec2_instance_data$instance_type))) +
   labs(
     title = glue::glue(
       "Total cost vs hours on different EC2 instance types\nin {reporting_my}"

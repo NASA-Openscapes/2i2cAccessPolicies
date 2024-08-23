@@ -79,15 +79,19 @@ ce_categories <- function(df, n_categories = 10) {
     )
 }
 
-aws_ce_palette <- c(
-  "#9a7b09",
-  "#6135a6",
-  "#0b7164",
-  "#952248",
-  "#0166ab",
-  "#e07a41",
-  "#8356cd",
-  "#2ea597",
-  "#c33d69",
-  "#6889e9"
-)
+aws_ce_palette <- function(n) {
+  pal <- c(
+    "#6889e9",
+    "#c33d69",
+    "#2ea597",
+    "#8356cd",
+    "#e07a41",
+    "#0166ab",
+    "#952248",
+    "#0b7164",
+    "#6135a6",
+    "#9a7b09"
+  )
+
+  rev(pal[seq(1, n)])
+}

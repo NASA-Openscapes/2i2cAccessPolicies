@@ -16,6 +16,10 @@ Imports:
     paws,
     here,
     glue,
-    patchwork
+    patchwork,
+    paletteer,
+    ggpomological,
+    khroma
 Remotes:
-    openscapes/kyber
+    openscapes/kyber,
+    gadenbuie/ggpomological
