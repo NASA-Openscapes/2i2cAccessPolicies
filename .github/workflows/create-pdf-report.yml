@@ -36,7 +36,7 @@ jobs:
           cache-version: 2
           working-directory: aws-usage-report
 
-      - name: Render Rmarkdown files and Commit Results
+      - name: Render qmd file and Commit PDF report
         run: |
           ym="$(Rscript -e 'format(lubridate::floor_date(Sys.Date(), unit = "months") - 1, "%Y-%m")')"
           outdir="aws-usage-report/reports"
