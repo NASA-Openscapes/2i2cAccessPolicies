@@ -52,8 +52,8 @@ knitr::opts_chunk$set(
   warning = FALSE
 )
 
-source(here("aws-usage-report/R/prometheus-utils.R"))
-source(here("aws-usage-report/R/aws-ce-utils.R"))
+source(here("R/prometheus-utils.R"))
+source(here("R/aws-ce-utils.R"))
 
 if (interactive()) {
   params <- list(year_month = format(Sys.Date() %m-% months(1), "%Y-%m"))
