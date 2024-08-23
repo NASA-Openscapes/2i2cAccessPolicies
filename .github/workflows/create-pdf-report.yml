@@ -38,7 +38,7 @@ jobs:
 
       - name: Render qmd file and Commit PDF report
         run: |
-          ym="$(Rscript -e 'format(lubridate::floor_date(Sys.Date(), unit = "months") - 1, "%Y-%m")')"
+          ym=$(Rscript -e 'cat(format(lubridate::floor_date(Sys.Date(), unit = "months") - 1, "%Y-%m"))')
           outdir="aws-usage-report/reports"
           outname="aws-usage-report_$ym.pdf"
           quarto render aws-usage-report/aws-usage-report.qmd -P year_month:$ym --output "$outname"
