@@ -68,6 +68,8 @@ reporting_my <- format(start_date, "%B %Y")
 cost_explorer <- paws::costexplorer()
 
 theme_set(theme_classic())
+
+googlesheets4::gs4_auth(path = Sys.getenv("GARGLE_AUTH_TOKEN"))
 ```
 
 ## Month over month changes
