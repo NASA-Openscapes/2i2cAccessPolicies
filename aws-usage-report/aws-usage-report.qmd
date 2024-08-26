@@ -103,7 +103,7 @@ total_monthly_cost_plot <- ggplot(total_monthly_usage_costs) +
   geom_line(aes(x = start_date, y = UnblendedCost)) +
   labs(
     title = glue::glue(
-      "The total cost of all AWS Services for running the NASA\nOpenscapes 2i2c",
+      "The total cost of all AWS Services for running the NASA\n Openscapes 2i2c",
       "Hub in {reporting_my} was ${round(total_monthly_cost)}"
     ),
     x = "Month",
@@ -144,9 +144,14 @@ monthly_cost_by_service_plot <- ggplot(
   geom_col() +
   scale_fill_discrete(type = aws_ce_palette(n_distinct(monthly_cost_service_summary$service))) +
   guides(fill = guide_legend(ncol = 2)) +
-  theme(legend.position = "bottom", legend.title.position = "top") +
+  theme(
+    legend.position = "bottom",
+    legend.title.position = "top",
+    legend.text = element_text(size = 8)
+  ) +
   labs(
-    title = "Monthly cost of AWS Services. Largest costs are EC2 compute (red) and EFS storage (green)",
+    title = "Monthly cost of AWS Services",
+    subtitle = "Largest costs are EC2 compute (blue) and EFS (home directory)\n storage (red)",
     caption = "*The top nine services are shown individually, with any remaining grouped into 'Other'",
     x = "Month",
     y = "Monthly cost ($)",
