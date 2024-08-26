@@ -308,7 +308,7 @@ are not displayed, but we can see if any users are using a disproportionate amou
 of space. When we see disproportionate amount of space used, we reach out to users and work with them to reduce their storage, and update the [Cookbook tutorials](https://nasa-openscapes.github.io/earthdata-cloud-cookbook/policies-admin/data-policies.html) as needed.
 
 ```{r homedir-size-champions}
-size_by_date |>
+size_by_date_by_team |>
   filter(team == "NASA Champions 2024") |>
   ggplot(aes(x = date, y = size, fill = directory)) +
   geom_area() +
@@ -318,7 +318,6 @@ size_by_date |>
     x = "Date",
     y = "Size (GiB)"
   )
-
 ```
 
 ### Compute costs and usage
