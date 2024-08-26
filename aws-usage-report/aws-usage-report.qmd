@@ -399,7 +399,7 @@ ec2_usage_plot <- ggplot(ec2_usage_data, aes(x = start_date, y = UsageQuantity, 
 
 ```{r daily-cost-by-instance}
 ec2_cost_data <- ec2_instance_type_costs_usage |>
-  mutate(instance_type = fct_reorder(instance_type, UnblendedCost, .fun = max))
+  mutate(instance_type = factor(instance_type, levels = levels(ec2_usage_data$instance_type)))
 
 ec2_cost_plot <-
   ggplot(ec2_cost_data, aes(x = start_date, y = UnblendedCost, fill = instance_type)) +
@@ -427,7 +427,8 @@ ec2_instance_data <- ec2_instance_type_costs_usage |>
   summarize(
     total_hours = sum(UsageQuantity),
     total_cost = sum(UnblendedCost)
-  )
+  ) |>
+  mutate(instance_type = factor(instance_type, levels = levels(ec2_cost_data$instance_type)))
 
 ggplot(ec2_instance_data, aes(x = total_hours, y = total_cost, colour = instance_type)) +
   geom_point(size = 3) +
