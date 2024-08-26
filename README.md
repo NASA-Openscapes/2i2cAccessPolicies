@@ -11,7 +11,7 @@ our policies:
   - [Python script](scripts/archive-home-dirs.py) and [documentation](https://nasa-openscapes.github.io/earthdata-cloud-cookbook/policies-admin/data-policies.html)
 - Monitoring cloud usage costs:
   - [Policy](https://nasa-openscapes.github.io/earthdata-cloud-cookbook/policies-admin/#monitoring-cloud-usage-costs)
-  - Automated report (coming soon)
+  - [Automated report](aws-usage-report/) of AWS resource usage and costs
 
 ## GitHub Discussions
 We’re using [Discussions](https://github.com/NASA-Openscapes/2i2cAccessPolicies/discussions) as a place to connect with other members of our community. We hope that you:
