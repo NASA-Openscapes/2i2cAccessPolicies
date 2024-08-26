@@ -399,7 +399,7 @@ ec2_usage_plot <- ggplot(ec2_usage_data, aes(x = start_date, y = UsageQuantity, 
   geom_col() +
   scale_fill_discrete(type = aws_ce_palette(n_distinct(ec2_usage_data$instance_type))) +
   labs(
-    title = "Daily EC2 usage by instance type",
+    title = "Daily EC2 usage by instance type*",
     x = "Date",
     y = "Usage (hours)",
     fill = "EC2 Instance Type",
