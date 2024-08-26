@@ -9,3 +9,5 @@ The report is generated automatically on the first day of every month using a Gi
 Reports are stored in the [reports](reports/) directory.
 
 ## Monthly reports
+
+- [Usage report for 2024-07](reports/aws-usage-report_2024-07.pdf)
