@@ -42,9 +42,9 @@ jobs:
           ym=$(Rscript -e 'cat(format(lubridate::floor_date(Sys.Date(), unit = "months") - 1, "%Y-%m"))')
           outdir="aws-usage-report/reports"
           outname="aws-usage-report_$ym.pdf"
-          quarto render aws-usage-report/aws-usage-report.qmd -P year_month:$ym --output "$outname"
-          mkdir -p $outdir && mv "$outname" $outdir
+          quarto render aws-usage-report/aws-usage-report.qmd -P "year_month:$ym" --output "$outname"
+          mkdir -p "$outdir" && mv "$outname" "$outdir"
           git config --local user.name "$GITHUB_ACTOR"
           git config --local user.email "$GITHUB_ACTOR@users.noreply.github.com"
-          git add $outdir/$outname && git commit -m 'Render report $ym' || echo "No changes to commit"
+          git add "$outdir/$outname" && git commit -m "Render report $ym" || echo "No changes to commit"
           git push origin || echo "No changes to commit"
