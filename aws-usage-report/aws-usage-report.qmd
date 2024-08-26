@@ -329,7 +329,7 @@ to the tasks they are running. More powerful compute resources have higher
 [hourly costs](https://aws.amazon.com/ec2/pricing/on-demand/), so it is 
 important to not choose a powerful instance when it isn't required.
 
-Examining both the usage and the costs of the instance types that users choose 
+Examining both the usage and the costs of the [EC2 instance types](https://aws.amazon.com/ec2/instance-types/) that users choose 
 can help us understand users's needs as well as compute costs. This helps us 
 develop policies and recommendations for Hub compute usage.
 
@@ -378,10 +378,11 @@ ec2_instance_type_costs_usage <- ec2_instance_type_costs_usage_res |>
   )
 ```
 
-The following plots show the usage and costs broken down by instance type. The 
-compute profiles that users can choose from run on `r5.xlarge` or 
-`r5.4xlarge` instances. Note that during some large workshops, administrators 
-choose very large instance types (for example `r5.16xlarge`) so they can 
+The following plots show the usage and costs broken down by [instance type](https://aws.amazon.com/ec2/instance-types/). The 
+compute profiles that users can choose from run on `r5.xlarge` (4 CPUs, 32 GiB memory) or 
+`r5.4xlarge` (16 CPUs, 128 GiB memory) instances. 
+Note that during some large workshops, administrators will
+choose very large instance types (for example `r5.16xlarge`; 64 CPUs, 512 GiB memory) so they can 
 provision a small number of nodes with many users per node. This is more 
 efficient than launching many nodes at once. Other instance types, such as
 `m6i.xlarge` indicate usage of the AWS infrastructure outside of the Hub, mostly
@@ -402,7 +403,8 @@ ec2_usage_plot <- ggplot(ec2_usage_data, aes(x = start_date, y = UsageQuantity, 
     title = "Daily EC2 usage by instance type",
     x = "Date",
     y = "Usage (hours)",
-    fill = "EC2 Instance Type"
+    fill = "EC2 Instance Type",
+    caption = "*Hub resource allocation options up to 3.7 CPUs run on\n 'r5.xlarge' instances, and those with up to 15.6 CPUs\n run on 'r5.4xlarge' instances."
   )
 ```
 
