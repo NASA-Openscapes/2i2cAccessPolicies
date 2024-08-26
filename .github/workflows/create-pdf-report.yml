@@ -1,5 +1,5 @@
 on:
-  workflow_dispatch:
+  workflow_dispatch: # Allow to run manually from Actions tab 
   schedule:
     - cron: '45 1 1 * *' # 1:45 am on 1st day of every month
 
@@ -46,5 +46,5 @@ jobs:
           mkdir -p $outdir && mv "$outname" $outdir
           git config --local user.name "$GITHUB_ACTOR"
           git config --local user.email "$GITHUB_ACTOR@users.noreply.github.com"
-          git commit $outdir/$outname -m 'Render report $ym' || echo "No changes to commit"
+          git add $outdir/$outname && git commit -m 'Render report $ym' || echo "No changes to commit"
           git push origin || echo "No changes to commit"
