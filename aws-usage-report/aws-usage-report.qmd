@@ -147,7 +147,7 @@ monthly_cost_by_service_plot <- ggplot(
   theme(legend.position = "bottom", legend.title.position = "top") +
   labs(
     title = "Monthly cost of AWS Services. Largest costs are EC2 compute (red) and EFS storage (green)",
-    caption = "*Services costing less than $1/month are grouped into 'Other'",
+    caption = "*The top nine services are shown individually, with any remaining grouped into 'Other'",
     x = "Month",
     y = "Monthly cost ($)",
     fill = "AWS Service"
