@@ -210,7 +210,7 @@ the workshop, at which point users' home directories are removed.
 
 The following figure shows the total size of home directories by namespace. Note
 the different y axis scales in each panel. The "prod" namespace panel is broken
-out by access team (Long-Term Access and NASA Champions 2024); the "workshop" namespace panel has "Team" as N/A since users are not added via a GitHub Team.
+out by the GitHub team by which they are granted access to the Hub (Long-Term Access and NASA Champions 2024).
 
 ```{r homedir-size-by-date}
 size_by_date <- query_prometheus_range(
@@ -255,17 +255,17 @@ teams <- data.frame(
 
 # setdiff(champions_members, unique(size_by_date$directory))
 
-size_by_date <- size_by_date |>
+size_by_date_by_team <- size_by_date |>
   left_join(
     teams,
     by = join_by(directory == user)
   ) |>
   mutate(
-    team = ifelse(namespace == "workshop", "N/A", team),
+    team = ifelse(namespace == "workshop", "workshop", team),
     directory = fct_reorder(directory, desc(size), .fun = max, .desc = TRUE)
   )
 
-all_dirs_sum_by_date <- size_by_date |>
+all_dirs_sum_by_date <- size_by_date_by_team |>
   filter(namespace %in% c("prod", "workshop")) |>
   group_by(namespace, date, team) |>
   summarize(total_size_gb = sum(size)) |>
@@ -282,11 +282,15 @@ all_dirs_sum_by_date |>
   geom_area(aes(fill = team)) +
   facet_grid(vars(namespace), scales = "free_y") +
   theme(legend.position = "bottom", legend.title.position = "top") +
-  paletteer::scale_fill_paletteer_d("ggpomological::pomological_palette") +
+  paletteer::scale_fill_paletteer_d(
+    "ggpomological::pomological_palette",
+    breaks = setdiff(unique(all_dirs_sum_by_date$team), "workshop")
+  ) +
   labs(
     title = "Total size of user home directories by access team\nand Hub namespace",
     x = "Date",
     y = "Size (GiB)",
+    fill = "GitHub Team (production hub only)"
   )
 ```
 
