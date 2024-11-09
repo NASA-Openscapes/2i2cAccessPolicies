@@ -3,7 +3,7 @@ title: "NASA Openscapes 2i2c JupyterHub\nUsage and Costs"
 params:
   year_month: "2024-06"
 subtitle: "Monthly report for `r format(lubridate::ym(params$year_month), '%B %Y')`"
-format: pdf
+format: typst
 ---
 
 <!--
@@ -72,9 +72,9 @@ cost_explorer <- paws::costexplorer()
 theme_set(
   theme_classic() +
   theme(
-    plot.title = element_textbox_simple(),
-    plot.subtitle = element_textbox_simple(),
-    plot.caption = element_textbox_simple(halign = 1)
+    plot.title = element_textbox_simple(margin = unit(c(5,5,5,5), "pt")),
+    plot.subtitle = element_textbox_simple(margin = unit(c(5,5,5,5), "pt")),
+    plot.caption = element_textbox_simple(halign = 1, margin = unit(c(5,0,0,0), "pt"))
     )
 )
 ```
@@ -93,10 +93,16 @@ the Hub, as well as a breakdown of costs by service each month.
 
 # https://www.paws-r-sdk.com/docs/costexplorer_get_cost_and_usage/
 # https://docs.aws.amazon.com/aws-cost-management/latest/APIReference/API_GetDimensionValues.html
-all_daily_costs_six_months <- sixtyfour::aws_billing(ceiling_date(end_date %m-% months(6), unit = "month"), end_date, filter = list(Dimensions = list(
+all_daily_costs_six_months <- sixtyfour::aws_billing(
+  ceiling_date(end_date %m-% months(6), unit = "month"),
+  end_date,
+  filter = list(
+    Dimensions = list(
     Key = "RECORD_TYPE",
     Values = "Usage"
-  )))
+    )
+  )
+)
 
 total_monthly_usage_costs <- all_daily_costs_six_months |>
     filter(id == "unblended") |>
@@ -138,14 +144,14 @@ monthly_costs_by_service <- all_daily_costs_six_months |>
     summarise(cost = sum(cost))
 
 monthly_cost_service_summary <- monthly_costs_by_service |>
-  ce_categories() |>
+  ce_categories(cost_col = cost) |>
   mutate(
-    service = fct_reorder(service, UnblendedCost, .fun = mean)
+    service = fct_reorder(service, cost, .fun = mean)
   )
 
 monthly_cost_by_service_plot <- ggplot(
   monthly_cost_service_summary,
-  aes(x = start_date, y = UnblendedCost, fill = service)
+  aes(x = start_date, y = cost, fill = service)
 ) +
   geom_col() +
   scale_fill_discrete(type = aws_ce_palette(n_distinct(monthly_cost_service_summary$service))) +
