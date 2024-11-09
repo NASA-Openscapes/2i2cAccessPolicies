@@ -27,7 +27,7 @@ fixed - we pay for "data at rest", with
 [ongoing daily costs/GB](https://aws.amazon.com/efs/pricing/) even while the
 Hub is not running.
 
-Storing large amounts of data in the cloud can incur significant ongoing costs if not done optimally. We are developing [technical strategies and policies](https://nasa-openscapes.github.io/earthdata-cloud-cookbook/policies-admin/data-policies.html) in the Earthdata Cloud Cookbook to reduce storage costs that will keep the Openscapes 2i2c Hub a shared resource for us all to use, while also providing reusable strategies for other admins.
+Storing large amounts of data in the cloud can incur significant ongoing costs if not done optimally. We are developing [technical strategies and policies](https://openscapes.cloud/data-storage.html) in the Earthdata Cloud Cookbook to reduce storage costs that will keep the Openscapes 2i2c Hub a shared resource for us all to use, while also providing reusable strategies for other admins.
 
 This report is intended to give a monthly summary of usage of the Hub and its
 resources, by tracking metrics on costs and usage of key components of storage (EFS)
@@ -217,11 +217,13 @@ we can look at daily usage metrics and costs.
 The Hub can currently be accessed via two different "namespaces": "production"
 (or "prod"), and "workshop". The production namespace is where participants are
 given medium to long-term access, as NASA mentors, Champions participants, etc.
-[Access is managed via GitHub](https://nasa-openscapes.github.io/earthdata-cloud-cookbook/policies-admin/add-folks-to-2i2c-github-teams.html) by assigning user's GitHub usernames to specific
+[Access is managed via GitHub](https://openscapes.cloud/github-access.html) by
+assigning user's GitHub usernames to specific
 teams.
 
 The "workshop" namespace is used specifically for large workshops and access
-is granted on the day of the workshop by use of a [shared password](https://nasa-openscapes.github.io/earthdata-cloud-cookbook/policies-admin/leading-workshops.html\#workshop-hub-access-via-shared-password) rather
+is granted on the day of the workshop by use of a
+[shared password](https://openscapes.cloud/password-access.html) rather
 than using GitHub teams. Access is short-term and usually revoked a week after
 the workshop, at which point users' home directories are removed.
 
