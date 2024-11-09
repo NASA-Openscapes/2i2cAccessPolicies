@@ -60,11 +60,11 @@ results_by_time_to_df <- function(x, keynames, metric) {
 
 # Aggregate services to maximum ten categories to simplify
 # visualization and align with AWS CE colour palette
-ce_categories <- function(df, n_categories = 10) {
+ce_categories <- function(df, n_categories = 10, cost_col) {
   if (length(unique(df$service)) > n_categories) {
     top_services <- df |>
       group_by(service) |>
-      summarise(total_cost = sum(UnblendedCost)) |>
+      summarise(total_cost = sum({{ cost_col }})) |>
       slice_max(total_cost, n = n_categories - 1) |>
       pull(service)
 
@@ -74,7 +74,7 @@ ce_categories <- function(df, n_categories = 10) {
   df |>
     group_by(start_date, end_date, service) |>
     summarise(
-      UnblendedCost = sum(UnblendedCost, na.rm = TRUE),
+      "{{ cost_col }}" := sum({{ cost_col }}, na.rm = TRUE),
       .groups = "drop"
     )
 }
