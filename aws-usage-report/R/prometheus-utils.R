@@ -184,7 +184,7 @@ create_range_df <- function(res, value_name) {
 
   lapply(seq_along(vals), \(x) {
     vals <- as.data.frame(vals[[x]])
-    cbind(metrics[x, ], vals, row.names = NULL)
+    cbind(metrics[x, , drop = FALSE], vals, row.names = NULL)
   }) |>
     purrr::list_rbind() |>
     rename(
