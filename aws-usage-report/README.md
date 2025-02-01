@@ -16,3 +16,4 @@ Reports are stored in the [reports](reports/) directory.
 - [Usage report for 2024-10](reports/aws-usage-report_2024-10.pdf)
 - [Usage report for 2024-11](reports/aws-usage-report_2024-11.pdf)
 - [Usage report for 2024-12](reports/aws-usage-report_2024-12.pdf)
+- [Usage report for 2025-01](reports/aws-usage-report_2025-01.pdf)
