@@ -1,3 +1,5 @@
+_**NOTE: This repository has been archived as of 2025-02-05 as all of the content has been transferred to <https://github.com/openscapes/openscapes.cloud>**_
+
 # 2i2c Access Policies for NASA Openscapes Users
 This repository is a place for us to develop draft policies for NASA-Openscapes, originally drafted by Erin Robinson.
 The current version of our access policies can be found in the [Earthdata Cloud Cookbook](https://nasa-openscapes.github.io/earthdata-cloud-cookbook/policies-admin/).
